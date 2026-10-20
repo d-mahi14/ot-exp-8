@@ -14,23 +14,23 @@
 ---
 
 ## 2. Continuous Optimization (Track A)
-- [ ] **Gradient Descent (GD)** (Vanilla batch gradient descent)
-- [ ] **Stochastic Gradient Descent (SGD)** & **Mini-batch SGD**
-- [ ] **Momentum Optimizer**
-- [ ] **Nesterov Accelerated Gradient (NAG)**
-- [ ] **AdaGrad**
-- [ ] **RMSProp**
-- [ ] **Adam**
-- [ ] **Newton's Method** (Full Hessian inversion)
-- [ ] **Gauss-Newton Method** (Non-linear least squares)
-- [ ] **Curvature Approximations**:
-  - [ ] Fisher Information Matrix approximation
-  - [ ] Diagonal / Low-rank Hessian approximation
-  - [ ] Hessian-Vector Products (Pearlmutter trick)
-- [ ] **Backpropagation**: Separate gradient computation engine on an MLP
-- [ ] **Convergence Analysis**: Convex, strongly convex, and non-convex benchmark comparison
-- [ ] **Step-size & Hyperparameter Tuning**: Sensitivity grid sweeps
-- [ ] **Noisy Objectives**: Optimizer robustness under noisy gradient estimations
+- [x] **Gradient Descent (GD)** (Vanilla batch gradient descent) (`track_A_continuous/src/first_order_optimizers.py`)
+- [x] **Stochastic Gradient Descent (SGD)** & **Mini-batch SGD** (`track_A_continuous/src/first_order_optimizers.py`)
+- [x] **Momentum Optimizer** (`track_A_continuous/src/first_order_optimizers.py`)
+- [x] **Nesterov Accelerated Gradient (NAG)** (`track_A_continuous/src/first_order_optimizers.py`)
+- [x] **AdaGrad** (`track_A_continuous/src/first_order_optimizers.py`)
+- [x] **RMSProp** (`track_A_continuous/src/first_order_optimizers.py`)
+- [x] **Adam** (`track_A_continuous/src/first_order_optimizers.py`)
+- [ ] **Newton's Method** (Full Hessian inversion) (Stage 2)
+- [ ] **Gauss-Newton Method** (Non-linear least squares) (Stage 2)
+- [ ] **Curvature Approximations**: (Stage 2)
+- [ ] Fisher Information Matrix approximation
+- [ ] Diagonal / Low-rank Hessian approximation
+- [ ] Hessian-Vector Products (Pearlmutter trick)
+- [ ] **Backpropagation**: Separate gradient computation engine on an MLP (Stage 2)
+- [x] **Convergence Analysis**: Convex, strongly convex, and non-convex benchmark comparison (`track_A_continuous/results/first_order_metrics.md`)
+- [ ] **Step-size & Hyperparameter Tuning**: Sensitivity grid sweeps (Stage 2)
+- [x] **Noisy Objectives**: Optimizer robustness under noisy gradient estimations (`track_A_continuous/src/benchmark_functions.py`)
 
 ---
 
