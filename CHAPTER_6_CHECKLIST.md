@@ -36,13 +36,13 @@
 ---
 
 ## 3. Discrete Optimization (Track B)
-- [ ] **Greedy Heuristics**: Knapsack / Max-Cut greedy approximation
-- [ ] **Integer Linear Programming (ILP)**: Exact modeling via PuLP / HiGHS
-- [ ] **Branch-and-Bound**: Exact tree search with upper/lower bound pruning
-- [ ] **Dynamic Programming**: Optimal substructure and memoization
-- [ ] **QUBO Formulation**: Binary-to-spin variable transformation ($s_i = 1 - 2x_i$)
-- [ ] **Ising Model Penalty Formulation**: Constraint enforcement ($P \cdot (\sum x_i - K)^2$)
-- [ ] **Classical Baseline**: Simulated Annealing solver (serves as baseline for Track C)
+- [x] **Greedy Heuristics**: 0-1 Knapsack value-to-weight ratio heuristic (`track_B_discrete/src/knapsack_solvers.py`)
+- [ ] **Integer Linear Programming (ILP)**: Exact modeling via PuLP / HiGHS (Batch 2)
+- [ ] **Branch-and-Bound**: Exact tree search with upper/lower bound pruning (Batch 2)
+- [x] **Dynamic Programming**: Exact 0-1 Knapsack $O(NW)$ table with backtracking (`track_B_discrete/src/knapsack_solvers.py`)
+- [ ] **QUBO Formulation**: Binary-to-spin variable transformation ($s_i = 1 - 2x_i$) (Batch 3)
+- [ ] **Ising Model Penalty Formulation**: Constraint enforcement ($P \cdot (\sum x_i - K)^2$) (Batch 3)
+- [ ] **Classical Baseline**: Simulated Annealing solver (serves as baseline for Track C) (Batch 3)
 
 ---
 
