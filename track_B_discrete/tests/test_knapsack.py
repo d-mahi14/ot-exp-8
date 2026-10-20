@@ -11,7 +11,8 @@ import pytest
 import numpy as np
 
 from track_B_discrete.src.knapsack_solvers import (
-    KnapsackProblem, KnapsackSolution, solve_knapsack_greedy, solve_knapsack_dp
+    KnapsackProblem, KnapsackSolution, solve_knapsack_greedy, solve_knapsack_dp,
+    solve_knapsack_branch_and_bound, solve_knapsack_ilp
 )
 
 
@@ -135,3 +136,79 @@ class TestKnapsackAlgorithms:
         assert total_wt == sol_dp.total_weight
         assert total_val == sol_dp.total_value
         assert total_wt <= capacity
+
+
+class TestBranchAndBoundAndILP:
+    """Independent unit tests for Branch-and-Bound and ILP (HiGHS) solvers."""
+
+    def test_bb_and_ilp_classic_instance(self):
+        problem = KnapsackProblem(values=[3, 4, 5, 6], weights=[2, 3, 4, 5], capacity=5)
+        sol_bb = solve_knapsack_branch_and_bound(problem)
+        sol_ilp = solve_knapsack_ilp(problem)
+
+        assert sol_bb.total_value == 7.0
+        assert sol_bb.total_weight == 5
+        assert sol_bb.selected_items == [0, 1]
+        assert sol_bb.nodes_explored >= 1
+
+        assert sol_ilp.total_value == 7.0
+        assert sol_ilp.total_weight == 5
+        assert sol_ilp.selected_items == [0, 1]
+
+    def test_bb_and_ilp_adversarial_counterexample(self):
+        problem = KnapsackProblem(values=[2.0, 150.0], weights=[1, 100], capacity=100)
+        sol_bb = solve_knapsack_branch_and_bound(problem)
+        sol_ilp = solve_knapsack_ilp(problem)
+
+        assert sol_bb.total_value == 150.0
+        assert sol_bb.selected_items == [1]
+
+        assert sol_ilp.total_value == 150.0
+        assert sol_ilp.selected_items == [1]
+
+    def test_bb_and_ilp_edge_cases(self):
+        # Zero capacity
+        p_zero = KnapsackProblem(values=[10, 20], weights=[5, 10], capacity=0)
+        assert solve_knapsack_branch_and_bound(p_zero).total_value == 0.0
+        assert solve_knapsack_ilp(p_zero).total_value == 0.0
+
+        # Empty problem
+        p_empty = KnapsackProblem(values=[], weights=[], capacity=10)
+        assert solve_knapsack_branch_and_bound(p_empty).total_value == 0.0
+        assert solve_knapsack_ilp(p_empty).total_value == 0.0
+
+        # Oversized items
+        p_over = KnapsackProblem(values=[100], weights=[50], capacity=20)
+        assert solve_knapsack_branch_and_bound(p_over).total_value == 0.0
+        assert solve_knapsack_ilp(p_over).total_value == 0.0
+
+    def test_all_four_solvers_agreement_on_random_instances(self):
+        """
+        Verify that DP, Branch-and-Bound, and ILP reach 100% identical exact optimal values,
+        and that Greedy produces a feasible lower bound.
+        """
+        rng = np.random.RandomState(101)
+        for trial in range(5):
+            n = 12
+            weights = list(rng.randint(3, 25, size=n))
+            values = [w + rng.randint(1, 10) for w in weights]
+            capacity = int(0.5 * sum(weights))
+            problem = KnapsackProblem(values, weights, capacity)
+
+            sol_greedy = solve_knapsack_greedy(problem)
+            sol_dp = solve_knapsack_dp(problem)
+            sol_bb = solve_knapsack_branch_and_bound(problem)
+            sol_ilp = solve_knapsack_ilp(problem)
+
+            # Feasibility
+            for sol in (sol_greedy, sol_dp, sol_bb, sol_ilp):
+                feasible, w, v = problem.evaluate_solution(sol.selected_items)
+                assert feasible is True
+                assert w == sol.total_weight
+                assert np.isclose(v, sol.total_value)
+
+            # Exact solvers must match 100%
+            np.testing.assert_allclose(sol_dp.total_value, sol_bb.total_value, rtol=1e-5)
+            np.testing.assert_allclose(sol_dp.total_value, sol_ilp.total_value, rtol=1e-5)
+            # Greedy lower bound
+            assert sol_greedy.total_value <= sol_dp.total_value + 1e-6

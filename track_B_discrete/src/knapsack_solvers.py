@@ -27,6 +27,8 @@ class KnapsackSolution:
     runtime_ms: float
     is_optimal: Optional[bool] = None
     method_name: str = ""
+    nodes_explored: int = 0
+    nodes_pruned: int = 0
 
 
 class KnapsackProblem:
@@ -221,4 +223,194 @@ def solve_knapsack_dp(problem: KnapsackProblem) -> KnapsackSolution:
         runtime_ms=runtime_ms,
         is_optimal=True,
         method_name="Dynamic Programming"
+    )
+
+
+def solve_knapsack_branch_and_bound(
+    problem: KnapsackProblem,
+    max_nodes: int = 200_000
+) -> KnapsackSolution:
+    """
+    Exact Branch-and-Bound Solver for 0-1 Knapsack:
+
+    Methodology:
+        1. Pre-sort items in descending order of value density (v_i / w_i).
+        2. Upper Bounding via Fractional Knapsack Relaxation:
+           At any node in the search tree (where items 0..k-1 have been fixed),
+           the maximum possible value from remaining items k..N-1 is bounded by
+           greedily packing whole items and allowing the critical boundary item
+           to be split fractionally.
+        3. Best-First Search Strategy:
+           Maintains a priority queue (max-heap) prioritized by upper bound.
+           Always explores the most promising branch first.
+        4. Pruning Criterion:
+           If a node's upper bound <= current best known integer solution value (LB),
+           the entire subtree is pruned without exploration.
+    """
+    import heapq
+    t0 = time.perf_counter()
+    N = problem.n_items
+    W = problem.capacity
+
+    if N == 0 or W == 0:
+        return KnapsackSolution(
+            selected_items=[], total_value=0.0, total_weight=0,
+            runtime_ms=(time.perf_counter() - t0) * 1000.0, is_optimal=True,
+            method_name="Branch and Bound", nodes_explored=1, nodes_pruned=0
+        )
+
+    # Pre-sort items by value-to-weight ratio descending
+    indexed_items = []
+    for i in range(N):
+        w = problem.weights[i]
+        v = problem.values[i]
+        ratio = (v / w) if w > 0 else float("inf")
+        indexed_items.append((ratio, v, w, i))
+    indexed_items.sort(key=lambda x: x[0], reverse=True)
+
+    sorted_vals = [it[1] for it in indexed_items]
+    sorted_wts = [it[2] for it in indexed_items]
+    orig_indices = [it[3] for it in indexed_items]
+
+    def compute_fractional_bound(level: int, current_wt: int, current_val: float) -> float:
+        if current_wt > W:
+            return 0.0
+        bound = current_val
+        rem_cap = W - current_wt
+        j = level
+        while j < N and sorted_wts[j] <= rem_cap:
+            bound += sorted_vals[j]
+            rem_cap -= sorted_wts[j]
+            j += 1
+        if j < N and rem_cap > 0:
+            bound += sorted_vals[j] * (rem_cap / sorted_wts[j])
+        return bound
+
+    # Priority queue max-heap: store (-bound, counter, level, current_wt, current_val, selected_mask)
+    counter = 0
+    init_bound = compute_fractional_bound(0, 0, 0.0)
+    # Entry: (-bound, counter, level, curr_wt, curr_val, selected_items_list)
+    pq = [(-init_bound, counter, 0, 0, 0.0, [])]
+
+    best_val = 0.0
+    best_selection = []
+    nodes_explored = 0
+    nodes_pruned = 0
+
+    while pq and nodes_explored < max_nodes:
+        neg_bnd, _, level, curr_wt, curr_val, sel_items = heapq.heappop(pq)
+        bound = -neg_bnd
+        nodes_explored += 1
+
+        # Prune if upper bound cannot beat best known solution
+        if bound <= best_val:
+            nodes_pruned += 1
+            continue
+
+        if level == N:
+            if curr_val > best_val:
+                best_val = curr_val
+                best_selection = sel_items
+            continue
+
+        # Branch 1: Include item at 'level' (if it fits)
+        item_wt = sorted_wts[level]
+        item_val = sorted_vals[level]
+
+        if curr_wt + item_wt <= W:
+            new_wt = curr_wt + item_wt
+            new_val = curr_val + item_val
+            new_sel = sel_items + [level]
+
+            if new_val > best_val:
+                best_val = new_val
+                best_selection = new_sel
+
+            bound_incl = compute_fractional_bound(level + 1, new_wt, new_val)
+            if bound_incl > best_val:
+                counter += 1
+                heapq.heappush(pq, (-bound_incl, counter, level + 1, new_wt, new_val, new_sel))
+            else:
+                nodes_pruned += 1
+
+        # Branch 2: Exclude item at 'level'
+        bound_excl = compute_fractional_bound(level + 1, curr_wt, curr_val)
+        if bound_excl > best_val:
+            counter += 1
+            heapq.heappush(pq, (-bound_excl, counter, level + 1, curr_wt, curr_val, sel_items))
+        else:
+            nodes_pruned += 1
+
+    # Map back from sorted indices to original item indices
+    final_original_items = sorted([orig_indices[idx] for idx in best_selection])
+    final_weight = sum(problem.weights[idx] for idx in final_original_items)
+    runtime_ms = (time.perf_counter() - t0) * 1000.0
+
+    return KnapsackSolution(
+        selected_items=final_original_items,
+        total_value=best_val,
+        total_weight=final_weight,
+        runtime_ms=runtime_ms,
+        is_optimal=(len(pq) == 0 or best_val >= bound),
+        method_name="Branch and Bound",
+        nodes_explored=nodes_explored,
+        nodes_pruned=nodes_pruned
+    )
+
+
+def solve_knapsack_ilp(problem: KnapsackProblem) -> KnapsackSolution:
+    """
+    Exact Integer Linear Programming (ILP) Solver for 0-1 Knapsack:
+
+    Mathematical Formulation:
+        Maximize:   c^T x = sum_{i=1}^N v_i * x_i
+        Subject to: A x <= b  ==> sum_{i=1}^N w_i * x_i <= W
+                    x_i in {0, 1} for all i in {1, ..., N}
+
+    Solver Backend:
+        Implemented via scipy.optimize.milp, which interfaces directly with
+        the HiGHS C++ dual-simplex branch-and-cut optimization engine.
+        Guarantees exact certificate of optimality, duality gap analysis,
+        and provides branch-and-bound node exploration counts.
+    """
+    from scipy.optimize import milp, LinearConstraint, Bounds
+    t0 = time.perf_counter()
+    N = problem.n_items
+    W = problem.capacity
+
+    if N == 0 or W == 0:
+        return KnapsackSolution(
+            selected_items=[], total_value=0.0, total_weight=0,
+            runtime_ms=(time.perf_counter() - t0) * 1000.0, is_optimal=True,
+            method_name="ILP (HiGHS)", nodes_explored=1, nodes_pruned=0
+        )
+
+    # scipy.optimize.milp minimizes c^T x, so negate values for maximization
+    c = -np.asarray(problem.values, dtype=np.float64)
+    weights = np.asarray(problem.weights, dtype=np.float64).reshape(1, -1)
+    
+    constraints = LinearConstraint(weights, -np.inf, float(W))
+    bounds = Bounds(0, 1)
+    integrality = np.ones(N, dtype=np.int32)  # 1 indicates integer/binary variable
+
+    res = milp(c=c, integrality=integrality, bounds=bounds, constraints=constraints)
+
+    if not res.success:
+        raise RuntimeError(f"MILP solver failed: {res.message}")
+
+    x_sol = res.x
+    selected_items = [i for i in range(N) if x_sol[i] > 0.5]
+    total_val = float(-res.fun)
+    total_wt = sum(problem.weights[i] for i in selected_items)
+    runtime_ms = (time.perf_counter() - t0) * 1000.0
+
+    return KnapsackSolution(
+        selected_items=selected_items,
+        total_value=total_val,
+        total_weight=total_wt,
+        runtime_ms=runtime_ms,
+        is_optimal=bool(res.success),
+        method_name="ILP (HiGHS)",
+        nodes_explored=int(getattr(res, "mip_node_count", 1)),
+        nodes_pruned=0
     )
