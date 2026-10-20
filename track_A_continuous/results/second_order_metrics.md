@@ -1,0 +1,25 @@
+# Track A: Second-Order Methods & Curvature Approximations Benchmark Results
+
+**Generated**: 2026-10-20 20:48:13
+
+| Landscape | Method | Initial Loss | Final Loss | Iterations to Converge | Runtime (ms) |
+| --- | --- | --- | --- | --- | --- |
+| Convex Quadratic (kappa=10) | Vanilla GD (lr=0.03) | 49.5 | 0.7236300334580801 | 30 | 0.274 |
+| Convex Quadratic (kappa=10) | Momentum (lr=0.03, gamma=0.85) | 49.5 | 0.00329208109101051 | 30 | 0.319 |
+| Convex Quadratic (kappa=10) | Diagonal Curvature | 49.5 | 0.0 | 1 | 0.031 |
+| Convex Quadratic (kappa=10) | Low-Rank Curvature (rank=1) | 49.5 | 4.155674947586471e-16 | 4 | 0.263 |
+| Convex Quadratic (kappa=10) | Pure Newton (exact) | 49.5 | 0.0 | 1 | 0.059 |
+| Rosenbrock (Non-Convex) | Vanilla GD (lr=0.001) | 24.199999999999996 | 3.6456515628170334 | 150 | 1.113 |
+| Rosenbrock (Non-Convex) | Momentum (lr=0.001, gamma=0.9) | 24.199999999999996 | 0.08438127369220337 | 150 | 1.803 |
+| Rosenbrock (Non-Convex) | Damped Newton (mu=1.0, lr=0.5) | 24.199999999999996 | 9.61902815274093e-13 | 106 | 2.776 |
+| Rosenbrock (Non-Convex) | Damped Newton (mu=0.1, lr=0.8) | 24.199999999999996 | 2.305737537664406e-13 | 32 | 0.787 |
+| Saddle Point f(x,y)=x^2-y^2 | Vanilla GD (lr=0.1) | 0.0 | -420.63194074481174 | 33 | 0.195 |
+| Saddle Point f(x,y)=x^2-y^2 | Momentum (lr=0.1, gamma=0.8) | 0.0 | -787.2634772198311 | 18 | 0.13 |
+| Saddle Point f(x,y)=x^2-y^2 | Un-damped Newton (mu=0, fails) | 0.0 | 0.0 | 40 | 0.417 |
+| Saddle Point f(x,y)=x^2-y^2 | Safeguarded Newton (mu_safe) | 0.0 | -2505.0010935162245 | 1 | 0.029 |
+
+### Key Theoretical & Empirical Findings:
+1. **Quadratic Exactness**: Pure Newton's method converges in **exactly 1 iteration** on any positive-definite quadratic bowl, jumping directly from loss 49.50 to 0.00 in 0.05 ms.
+2. **Curvature Approximations**: Diagonal Hessian approximation achieves coordinate-scaled convergence without matrix inversion, while Low-Rank captures the principal curvature subspace.
+3. **Saddle-Point Vulnerability & Safeguarding**: Un-damped Newton jumps directly into the stationary saddle point (0,0) because it solves nabla f = 0 without checking curvature signs. Safeguarded Newton applies Levenberg-Marquardt spectral damping (mu > 2), rendering the effective Hessian positive definite and escaping along the descent direction.
+4. **Non-Convex Rosenbrock**: Damped Newton provides stable, quadratic local convergence inside the valley once within the basin of attraction.

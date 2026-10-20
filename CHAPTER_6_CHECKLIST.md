@@ -21,16 +21,17 @@
 - [x] **AdaGrad** (`track_A_continuous/src/first_order_optimizers.py`)
 - [x] **RMSProp** (`track_A_continuous/src/first_order_optimizers.py`)
 - [x] **Adam** (`track_A_continuous/src/first_order_optimizers.py`)
-- [ ] **Newton's Method** (Full Hessian inversion) (Stage 2)
-- [ ] **Gauss-Newton Method** (Non-linear least squares) (Stage 2)
-- [ ] **Curvature Approximations**: (Stage 2)
-- [ ] Fisher Information Matrix approximation
-- [ ] Diagonal / Low-rank Hessian approximation
-- [ ] Hessian-Vector Products (Pearlmutter trick)
-- [ ] **Backpropagation**: Separate gradient computation engine on an MLP (Stage 2)
-- [x] **Convergence Analysis**: Convex, strongly convex, and non-convex benchmark comparison (`track_A_continuous/results/first_order_metrics.md`)
-- [ ] **Step-size & Hyperparameter Tuning**: Sensitivity grid sweeps (Stage 2)
-- [x] **Noisy Objectives**: Optimizer robustness under noisy gradient estimations (`track_A_continuous/src/benchmark_functions.py`)
+- [x] **Newton's Method** (Full Hessian inversion with Levenberg-Marquardt damping) (`track_A_continuous/src/second_order_methods.py`)
+- [x] **Gauss-Newton Method** (Non-linear least squares $J^T J$) (`track_A_continuous/src/second_order_methods.py`)
+- [x] **Curvature Approximations**:
+  - [x] Empirical Fisher Information Matrix (`track_A_continuous/src/second_order_methods.py`)
+  - [x] Diagonal Hessian approximation (`track_A_continuous/src/second_order_methods.py`)
+  - [x] Low-rank Hessian spectral approximation (`track_A_continuous/src/second_order_methods.py`)
+  - [x] Hessian-Vector Products (Pearlmutter finite-difference trick) (`track_A_continuous/src/second_order_methods.py`)
+- [x] **Backpropagation**: Separate gradient computation engine on an MLP (`track_A_continuous/src/mlp_backpropagation.py`)
+- [x] **Convergence Analysis**: Convex, strongly convex, non-convex, and saddle-point benchmarks (`track_A_continuous/results/first_order_metrics.md`, `second_order_metrics.md`)
+- [x] **Step-size & Hyperparameter Tuning**: Sensitivity analysis across learning rates and damping (`track_A_continuous/results/`)
+- [x] **Noisy Objectives**: Robustness evaluation on noisy linear regression (`track_A_continuous/src/benchmark_functions.py`)
 
 ---
 

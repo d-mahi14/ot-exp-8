@@ -65,7 +65,33 @@
 
 ---
 
+### Failure Record 03: Inverted Eigenvector Indexing in Low-Rank Curvature Approximation
+- **Track**: Track A (Continuous Optimization — Second-Order Methods)
+- **Date**: 2026-10-20
+- **AI Tool & Model**: Antigravity (Gemini 3.8 Flash)
+- **Prompt Reference**: [`prompts/track_A/prompt_03_second_order_and_backprop.md`](file:///c:/dev/ot-8/prompts/track_A/prompt_03_second_order_and_backprop.md)
+- **The AI Mistake**:
+  In `LowRankCurvatureApproximation`, after sorting the eigenvalues and eigenvectors descending via `idx = np.argsort(eigvals)[::-1]`, the code executed:
+  ```python
+  sorted_vals = eigvals[idx]
+  sorted_vecs = eigvecs[:, idx]  # Already sorted!
+
+  top_vals = sorted_vals[:r]
+  top_vecs = sorted_vecs[:, idx[:r]]  # Redundant re-indexing by idx!
+```
+  This redundant index operation re-indexed into an already-sorted matrix, pairing the largest eigenvalue $\lambda=10$ with the eigenvector of the smallest eigenvalue $\lambda=1$, and vice-versa.
+- **Why It Failed / Root Cause**:
+  Along the steep coordinate ($x_0$, eigenvalue 10), the step divided by 1.0 rather than 10.0, applying a step size 10 times too large ($x_{t+1} = x_t - 30$). Along the shallow coordinate ($x_1$, eigenvalue 1), the step divided by 10.0 rather than 1.0. This caused catastrophic exponential divergence ($10^{58}$ within 30 iterations) on the quadratic bowl.
+- **Verification Method (How It Was Caught)**:
+  Caught immediately when inspecting the generated metrics table `second_order_metrics.md`, where the final loss for `Low-Rank Curvature` was measured at `8.08e+58` instead of converging.
+- **The Fix**:
+  Corrected the column slice to `top_vecs = sorted_vecs[:, :r]`. Additionally, implemented robust estimation of the background curvature $\sigma^2$ from the average of discarded trailing eigenvalues $\frac{1}{d-r}\sum_{k=r+1}^d \lambda_k$ rather than dividing by raw damping.
+- **Viva Lesson Learned**:
+  When manipulating spectral decompositions (eigenspaces, SVD, PCA), subtle indexing mistakes can silently invert coordinate projections. Never assume second-order or approximation code works without verifying both the mathematical derivation and the empirical convergence numbers on controlled benchmarks.
+
+---
+
 ### Log Status
 - [x] **Failure 1**: Documented above (Track A: Script import resolution & dependency assumption).
 - [x] **Failure 2**: Documented above (Track A: Discrepancy between empirical metrics and textual analysis).
-- [ ] **Failure 3**: Pending implementation of Tracks C, F, G, H, I, or J.
+- [x] **Failure 3**: Documented above (Track A: Inverted eigenvector indexing in Low-Rank Curvature).
