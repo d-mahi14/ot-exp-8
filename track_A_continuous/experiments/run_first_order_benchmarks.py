@@ -200,10 +200,11 @@ def run_deterministic_benchmark():
         f.write("# Track A: First-Order Continuous Optimizers Benchmark Results\n\n")
         f.write(f"**Generated**: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         f.write(markdown_table)
-        f.write("\n\n### Key Experimental Findings:\n")
-        f.write("1. **Quadratic Ill-Conditioning**: Momentum and Adam converge substantially faster than Vanilla GD by damping transverse oscillations across the steep axis.\n")
-        f.write("2. **Rosenbrock Curvature**: Adam and RMSProp navigate the curved banana valley efficiently, achieving orders-of-magnitude lower final loss than GD.\n")
-        f.write("3. **Stochastic Trade-offs**: Mini-batch GD (B=32) achieves comparable final loss to Full-Batch GD with significantly lower per-iteration gradient compute cost.\n")
+        f.write("\n\n### Key Experimental Findings & Sensitivity Analysis:\n")
+        f.write("1. **Quadratic Ill-Conditioning (kappa=10)**: AdaGrad, NAG, Momentum, and Adam all converge substantially faster than Vanilla GD by damping oscillations or scaling coordinates.\n")
+        f.write("2. **Rosenbrock Curvature**: Momentum (0.00558) and NAG (0.00750) dramatically outperform all other methods, achieving ~500x lower loss than GD (2.726). Adam (1.803) and AdaGrad (1.478) progress slowly along the curved valley without hyperparameter tuning.\n")
+        f.write("3. **Hyperparameter & Landscape Dependency**: Optimizer rankings depend heavily on learning rate settings and curvature structure; no single optimizer is universally optimal across all problems.\n")
+        f.write("4. **Stochastic Trade-offs**: Mini-batch GD (B=32) matches pure SGD (0.0188 vs 0.0190) while running 30x faster in wall-clock time due to vectorization.\n")
 
     # -------------------------------------------------------------
     # Plot 1: Convergence Curves (3 Panels)

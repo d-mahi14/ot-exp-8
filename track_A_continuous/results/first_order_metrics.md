@@ -21,7 +21,20 @@
 | Noisy Regression (B=1) | Pure SGD (B=1) | 7.577641500055415 | 0.019004317068602113 | 0.03669860171712702 | 40000 | 1375.504 |
 | Noisy Regression (B=32) | Adam (B=32) | 7.577641500055415 | 0.021081881694459945 | 0.07404796273251885 | 1240 | 57.703 |
 
-### Key Experimental Findings:
-1. **Quadratic Ill-Conditioning**: Momentum and Adam converge substantially faster than Vanilla GD by damping transverse oscillations across the steep axis.
-2. **Rosenbrock Curvature**: Adam and RMSProp navigate the curved banana valley efficiently, achieving orders-of-magnitude lower final loss than GD.
-3. **Stochastic Trade-offs**: Mini-batch GD (B=32) achieves comparable final loss to Full-Batch GD with significantly lower per-iteration gradient compute cost.
+### Key Experimental Findings & Sensitivity Analysis:
+1. **Quadratic Ill-Conditioning ($\kappa=10$)**:
+   - Vanilla GD ($4.84 \times 10^{-4}$) is hindered by transverse oscillations across the steep eigenvector.
+   - **AdaGrad** ($3.60 \times 10^{-23}$), **NAG** ($9.68 \times 10^{-13}$), **Momentum** ($1.75 \times 10^{-10}$), and **Adam** ($3.72 \times 10^{-7}$) all converge substantially faster than GD by scaling coordinates or accumulating directional velocity.
+
+2. **Rosenbrock Curvature (Non-Convex Curved Valley)**:
+   - **Correction & Critical Insight**: Momentum ($5.58 \times 10^{-3}$) and NAG ($7.50 \times 10^{-3}$) dramatically outperform all other optimizers on Rosenbrock, achieving nearly $500\times$ lower final loss than Vanilla GD ($2.726$).
+   - In contrast to standard heuristics, **Adam** ($1.803$) and **AdaGrad** ($1.478$) make modest progress within 400 iterations, while **RMSProp** reaches $0.511$.
+   - **Reason**: The banana valley features high gradient orthogonal to the valley and minuscule gradients along the curved bottom. Momentum builds forward velocity along the ravine, whereas un-tuned adaptive moments in Adam can be overly conservative in step sizes along the flat ravine without aggressive learning rate tuning.
+
+3. **Hyperparameter & Landscape Dependency**:
+   - Optimizer rankings are **strongly dependent on the learning rate ($\eta$) and the landscape geometry**.
+   - No single optimizer dominates universally across all landscapes. Momentum excels in persistent curved ravines, while adaptive coordinate methods (AdaGrad/Adam) shine in anisotropic convex quadratic bowls.
+
+4. **Stochastic Trade-offs (Noisy Linear Regression)**:
+   - **Mini-Batch GD ($B=32$)** attains a final loss ($0.0188$) comparable to pure SGD ($0.0190$), but executes **$30\times$ faster in wall-clock time** ($46.16$ ms vs $1375.50$ ms) due to vectorized array processing and reduced Python loop overhead.
+   - Full-Batch GD ($B=1000$) achieves $0.1492$ because within a fixed 40-epoch budget it performs only 40 gradient updates compared to the 1,240 updates of mini-batch GD.
