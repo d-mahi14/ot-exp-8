@@ -40,9 +40,9 @@
 - [x] **Integer Linear Programming (ILP)**: Exact modeling via HiGHS branch-and-cut solver (`track_B_discrete/src/knapsack_solvers.py`)
 - [x] **Branch-and-Bound**: Exact tree search with fractional LP relaxation upper bounds (`track_B_discrete/src/knapsack_solvers.py`)
 - [x] **Dynamic Programming**: Exact 0-1 Knapsack $O(NW)$ table with backtracking (`track_B_discrete/src/knapsack_solvers.py`)
-- [ ] **QUBO Formulation**: Binary-to-spin variable transformation ($s_i = 1 - 2x_i$) (Batch 3)
-- [ ] **Ising Model Penalty Formulation**: Constraint enforcement ($P \cdot (\sum x_i - K)^2$) (Batch 3)
-- [ ] **Classical Baseline**: Simulated Annealing solver (serves as baseline for Track C) (Batch 3)
+- [x] **QUBO Formulation**: Binary-to-spin variable transformation ($s_i = 1 - 2x_i$) (`track_B_discrete/src/qubo_ising.py`)
+- [x] **Ising Model Penalty Formulation**: Constraint enforcement ($P \cdot (\sum x_i - K)^2$) (`track_B_discrete/src/qubo_ising.py`)
+- [x] **Classical Baseline**: Simulated Annealing solver (serves as baseline for Track C) (`track_B_discrete/src/qubo_ising.py`)
 
 ---
 
