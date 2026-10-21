@@ -9,6 +9,12 @@ from track_C_quantum.src.qaoa_maxcut import (
     parse_qiskit_bitstring,
     explain_qaoa_depth_and_p,
 )
+from track_C_quantum.src.vqe_ising import (
+    IsingPauliHamiltonian,
+    HardwareEfficientAnsatz,
+    VQESolver,
+    explain_vqe_foundations,
+)
 
 __all__ = [
     "CostHamiltonian",
@@ -16,4 +22,8 @@ __all__ = [
     "QAOAMaxCutSolver",
     "parse_qiskit_bitstring",
     "explain_qaoa_depth_and_p",
+    "IsingPauliHamiltonian",
+    "HardwareEfficientAnsatz",
+    "VQESolver",
+    "explain_vqe_foundations",
 ]
