@@ -1,0 +1,23 @@
+category,item,metric_name,metric_value
+Gradient,Analytical Reference (eps=1e-7),error_vs_ref,0.0
+Gradient,Parameter-Shift Rule,error_vs_ref,6.627723313114131e-10
+Gradient,Central Finite Difference (eps=1e-5),error_vs_ref,6.593190986056895e-10
+Gradient,SPSA (50 samples avg),error_vs_ref,0.07283599169811353
+QNN_vs_MLP,Quantum Classifier PQC (QNN),test_accuracy,0.5
+QNN_vs_MLP,Classical MLP Baseline,test_accuracy,0.5416666666666666
+Shot_Variance,Shots_100,std_error,0.09029177726690735
+Shot_Variance,Shots_1000,std_error,0.02534534581776009
+Shot_Variance,Shots_10000,std_error,0.00968479011976334
+Noise_Model,Ideal (Noiseless),energy_shift,0.02614128123271353
+Noise_Model,Readout Noise Only,energy_shift,0.07428581248271371
+Noise_Model,Depolarizing Noise Only,energy_shift,0.03991081248271344
+Noise_Model,Combined NISQ Model,energy_shift,0.08375846873271353
+Barren_Plateau,Qubits_2,gradient_variance,0.19964374334302293
+Barren_Plateau,Qubits_3,gradient_variance,0.089170090019644
+Barren_Plateau,Qubits_4,gradient_variance,0.05806902100646545
+Barren_Plateau,Qubits_5,gradient_variance,0.03619223623573424
+Barren_Plateau,Qubits_6,gradient_variance,0.02189525092216064
+Barren_Plateau,Qubits_7,gradient_variance,0.007840010795369098
+Barren_Plateau,Qubits_8,gradient_variance,0.005222990274087198
+Barren_Plateau,Qubits_9,gradient_variance,0.002838823265426902
+Barren_Plateau,Qubits_10,gradient_variance,0.0004900279950466863

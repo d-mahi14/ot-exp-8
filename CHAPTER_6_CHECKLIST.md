@@ -49,16 +49,16 @@
 ## 4. Quantum Optimization (Track C)
 - [x] **QAOA**: Quantum Approximate Optimization Algorithm ($p=1, 2, 3$) on Track B QUBO / Graph Max-Cut (`track_C_quantum/src/qaoa_maxcut.py`)
 - [x] **VQE**: Variational Quantum Eigensolver on Ising Hamiltonian (`track_C_quantum/src/vqe_ising.py`)
-- [ ] **PQCs & QNNs**: Parameterized Quantum Circuits
-- [ ] **Quantum Gradients**:
-  - [ ] Parameter-shift rule
-  - [ ] Simultaneous Perturbation Stochastic Approximation (SPSA)
-  - [ ] Quantum Natural Gradient (QNG)
-- [ ] **Empirical Quantum Experiments**:
-  - [ ] Classical vs. Quantum baseline comparison
-  - [ ] Finite-shot measurement variance ($100, 1000, 10000$ shots)
-  - [ ] Quantum hardware noise model (depolarizing/readout noise)
-  - [ ] Barren plateaus empirical study ($N \in [2..10]$ qubits)
+- [x] **PQCs & QNNs**: Parameterized Quantum Circuits and Quantum Classifiers (`track_C_quantum/src/pqc_qnn.py`)
+- [x] **Quantum Gradients**:
+  - [x] Parameter-shift rule (`track_C_quantum/src/quantum_gradients.py`)
+  - [x] Simultaneous Perturbation Stochastic Approximation (SPSA) (`track_C_quantum/src/quantum_gradients.py`)
+  - [x] Quantum Natural Gradient (QNG with Fubini-Study metric) (`track_C_quantum/src/quantum_gradients.py`)
+- [x] **Empirical Quantum Experiments**:
+  - [x] Classical vs. Quantum baseline comparison (QNN vs Classical MLP, QAOA/VQE vs BF/SA) (`track_C_quantum/results/`)
+  - [x] Finite-shot measurement variance ($100, 1000, 10000$ shots) (`track_C_quantum/src/quantum_noise_experiments.py`)
+  - [x] Quantum hardware noise model (depolarizing/readout noise) (`track_C_quantum/src/quantum_noise_experiments.py`)
+  - [x] Barren plateaus empirical study ($N \in [2..10]$ qubits) (`track_C_quantum/src/quantum_noise_experiments.py`)
 
 ---
 

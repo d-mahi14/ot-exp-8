@@ -91,7 +91,26 @@
 
 ---
 
+### Failure Record 04: Observable Eigenstate Zero-Variance in Finite-Shot Quantum Scaling Experiments
+- **Track**: Track C (Quantum Optimization)
+- **Date**: 2026-10-21
+- **AI Tool & Model**: Antigravity (Gemini 3.8 Flash)
+- **Prompt Reference**: [`prompts/track_C/prompt_03_qnn_gradients_and_noise.md`](file:///c:/dev/ot-8/prompts/track_C/prompt_03_qnn_gradients_and_noise.md)
+- **The AI Mistake**:
+  In `run_quantum_advanced_benchmarks.py`, the finite-shot scaling benchmark was initially configured to evaluate the observable $H = Z_0 Z_1$ on the Bell state $|\Phi^+\rangle = (|00\rangle + |11\rangle)/\sqrt{2}$. Because $|\Phi^+\rangle$ is an exact eigenstate of $Z_0 Z_1$ with eigenvalue $+1$, every projective measurement deterministically collapsed to $+1$. The empirical sample variance across all trials was identically zero ($\sigma_M^2 = 0.00$), producing a runtime warning in matplotlib (`UserWarning: Data has no positive values, and therefore cannot be log-scaled`) and failing to exhibit the Central Limit Theorem shot-noise scaling.
+- **Why It Failed / Subtle Bug**:
+  The AI overlooked basic quantum projective measurement physics: if $|\psi\rangle$ is an eigenstate of observable $O$ ($O|\psi\rangle = \lambda |\psi\rangle$), the measurement outcome is non-stochastic ($\Delta O = 0$). Projective quantum shot noise only manifests when $|\psi\rangle$ is a superposition across distinct eigenspaces.
+- **Verification Method (How It Was Caught)**:
+  Caught during terminal execution when `run_quantum_advanced_benchmarks.py` produced standard deviation outputs `Std Error: 0.0000` for all shot counts $M \in \{100, 1000, 10000\}$ and triggered matplotlib log-scale warnings.
+- **The Fix**:
+  Replaced the eigenstate with a non-eigenstate superposition state $|\psi\rangle = R_y(\pi/3)|0\rangle$ on observable $Z_0$, where $\langle Z_0 \rangle = \cos(\pi/3) = 0.5$ and the single-shot variance is $1 - 0.5^2 = 0.75 > 0$. This produced clean, empirical variance scaling matching $\sigma \propto 1/\sqrt{M}$ ($0.0903 \to 0.0253 \to 0.0097$).
+- **Viva Lesson Learned**:
+  When benchmarking quantum measurement variance and shot-noise statistics, always ensure the test state is in a genuine coherent superposition of the observable's eigenbasis. An exact eigenstate will collapse deterministically with zero variance regardless of shot budget.
+
+---
+
 ### Log Status
 - [x] **Failure 1**: Documented above (Track A: Script import resolution & dependency assumption).
 - [x] **Failure 2**: Documented above (Track A: Discrepancy between empirical metrics and textual analysis).
 - [x] **Failure 3**: Documented above (Track A: Inverted eigenvector indexing in Low-Rank Curvature).
+- [x] **Failure 4**: Documented above (Track C: Observable eigenstate zero-variance in finite-shot scaling).
