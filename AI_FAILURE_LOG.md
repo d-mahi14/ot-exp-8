@@ -109,8 +109,32 @@
 
 ---
 
+### Failure Record 05: Python GIL and Windows Process Spawn Inversion in Parallel Scaling
+- **Track**: Track D (Submodular, Parallel & Distributed Optimization)
+- **Date**: 2026-10-21
+- **AI Tool & Model**: Antigravity (Gemini 3.8 Flash)
+- **Prompt Reference**: [`prompts/track_D/prompt_01_submodular_parallel_distributed.md`](file:///c:/dev/ot-8/prompts/track_D/prompt_01_submodular_parallel_distributed.md)
+- **The AI Mistake**:
+  1. The initial synthetic compute kernel used a pure Python loop of trigonometric scalars (`math.sin`, `math.cos`) executed via `threading.Thread` and `ProcessPoolExecutor`. Because pure Python bytecode does not release CPython's Global Interpreter Lock (GIL), multi-threaded workers were completely serialized on a single CPU core.
+  2. To bypass the GIL, `ProcessPoolExecutor` was initially invoked per benchmark step. However, on Windows, multiprocessing defaults to `spawn` (which starts a brand-new Python interpreter process from scratch, importing packages and runtime). With a 1.0-second workload, the 1.5–2.0s per-worker spawn overhead caused 4 workers to take 5.3s (speedup = $0.19\times$, an 80% slowdown!).
+- **Why It Failed / Subtle Bug**:
+  The AI failed to account for CPython's execution model and operating system IPC differences:
+  - Threads running pure Python bytecode cannot achieve multi-core parallelism due to the GIL.
+  - Windows lacks POSIX `fork()`; spawning worker processes incurs significant cold-start process creation and module re-import latency.
+- **Verification Method (How It Was Caught)**:
+  Empirical benchmark run of `run_track_d_benchmarks.py` output:
+  `Sequential T(1) = 1.019 s`, `Static p=2: T=4.841 s (Speedup: 0.21x)`, `Static p=4: T=5.299 s (Speedup: 0.19x)`, and Amdahl's fitted parallel fraction collapsed to `s = 0.000`.
+- **The Fix**:
+  1. Refactored `synthetic_compute_kernel` to use NumPy dense BLAS matrix operations (`np.dot(np.sin(mat), np.cos(mat))`). Under the hood, NumPy releases the GIL during C/BLAS matrix calculations, enabling true parallel execution across multiple CPU cores within threads.
+  2. Updated parallel executors to leverage `ThreadPoolExecutor` with GIL-releasing kernels, eliminating the Windows process spawn latency entirely and achieving $2.17\times$ speedup on 2 workers and $>2.8\times$ on 4 workers ($T(1)=0.44\text{s} \to T(4)=0.15\text{s}$).
+- **Viva Lesson Learned**:
+  Parallel scaling is fundamentally constrained by runtime overheads: thread parallelism in Python requires explicit GIL release (via BLAS, Cython, or C extensions), while process parallelism on Windows must avoid repeated process instantiation in the critical path due to non-trivial `spawn` latency.
+
+---
+
 ### Log Status
 - [x] **Failure 1**: Documented above (Track A: Script import resolution & dependency assumption).
 - [x] **Failure 2**: Documented above (Track A: Discrepancy between empirical metrics and textual analysis).
 - [x] **Failure 3**: Documented above (Track A: Inverted eigenvector indexing in Low-Rank Curvature).
 - [x] **Failure 4**: Documented above (Track C: Observable eigenstate zero-variance in finite-shot scaling).
+- [x] **Failure 5**: Documented above (Track D: Python GIL and Windows Process Spawn Inversion in Parallel Scaling).

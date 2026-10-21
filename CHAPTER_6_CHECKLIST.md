@@ -63,20 +63,20 @@
 ---
 
 ## 5. Submodular, Parallel & Distributed Optimization (Track D)
-- [ ] **Submodular Optimization**:
-  - [ ] Diminishing returns property verification ($f(A \cup \{e\}) - f(A) \ge f(B \cup \{e\}) - f(B)$)
-  - [ ] Greedy selection implementation
-  - [ ] Empirical check of $(1 - 1/e)$ approximation bound
-- [ ] **Parallel Program Optimization**:
-  - [ ] Multi-core load balancing, makespan, and work stealing
-  - [ ] Locality, synchronization, and communication overhead
-  - [ ] Data, model, and pipeline parallelism comparison
-  - [ ] Speedup $S(p)$ and parallel efficiency $E(p)$ measurement (1, 2, 4, 8 workers)
-  - [ ] Amdahl's Law and Gustafson's Law theoretical fits
-- [ ] **Distributed & Multi-Task Optimization**:
-  - [ ] Federated Learning (**FedAvg**) vs. Centralized training across local epochs $E$ and rounds $R$
-  - [ ] Multiple Gradient Descent Algorithm (**MGDA**) for Pareto-stationarity
-  - [ ] **GradNorm** dynamic gradient balancing vs. Uniform task weighting
+- [x] **Submodular Optimization**:
+  - [x] Diminishing returns property verification ($f(A \cup \{e\}) - f(A) \ge f(B \cup \{e\}) - f(B)$) (`track_D_submodular_parallel/src/submodular_maximization.py`)
+  - [x] Greedy selection implementation (Standard Greedy & Accelerated Lazy Greedy / Minoux) (`track_D_submodular_parallel/src/submodular_maximization.py`)
+  - [x] Empirical check of $(1 - 1/e)$ approximation bound vs exact Brute Force (`track_D_submodular_parallel/results/submodular_metrics.md`)
+- [x] **Parallel Program Optimization**:
+  - [x] Multi-core load balancing, makespan, and work stealing simulation (`track_D_submodular_parallel/src/parallel_optimization.py`)
+  - [x] Locality, synchronization, and communication overhead analysis (`track_D_submodular_parallel/results/parallel_scaling_metrics.md`)
+  - [x] Data, model, and pipeline parallelism comparison (Ring All-Reduce DDP & 1F1B bubble models) (`track_D_submodular_parallel/src/parallel_optimization.py`)
+  - [x] Speedup $S(p)$ and parallel efficiency $E(p)$ measurement (1, 2, 4, 8 workers) (`track_D_submodular_parallel/results/parallel_scaling_metrics.csv`)
+  - [x] Amdahl's Law and Gustafson's Law theoretical fits (`track_D_submodular_parallel/results/parallel_scaling_metrics.md`, `track_d_benchmarks.png`)
+- [x] **Distributed & Multi-Task Optimization**:
+  - [x] Federated Learning (**FedAvg**) vs. Centralized training across local epochs $E$ and rounds $R$ (`track_D_submodular_parallel/src/federated_multitask.py`)
+  - [x] Multiple Gradient Descent Algorithm (**MGDA**) for Pareto-stationarity (`track_D_submodular_parallel/src/federated_multitask.py`)
+  - [x] **GradNorm** dynamic gradient balancing vs. Uniform task weighting (`track_D_submodular_parallel/src/federated_multitask.py`, `track_D_submodular_parallel/results/federated_multitask_metrics.md`)
 
 ---
 
