@@ -1,0 +1,153 @@
+{
+  "depot_transformer_limit_kw": 144.0,
+  "charger_efficiency": 0.92,
+  "peak_demand_charge_per_kw": 8.5,
+  "tou_tariff_per_kwh": [
+    0.08,
+    0.08,
+    0.08,
+    0.08,
+    0.08,
+    0.08,
+    0.16,
+    0.16,
+    0.16,
+    0.16,
+    0.16,
+    0.16,
+    0.16,
+    0.16,
+    0.16,
+    0.16,
+    0.38,
+    0.38,
+    0.38,
+    0.38,
+    0.38,
+    0.16,
+    0.16,
+    0.16
+  ],
+  "vehicles": [
+    {
+      "vehicle_id": 0,
+      "battery_capacity_kwh": 75.0,
+      "arrival_hour": 16,
+      "departure_hour": 7,
+      "initial_soc": 0.32171958398227646,
+      "target_soc": 0.9197368029059363,
+      "energy_required_kwh": 44.85129141927449,
+      "max_charge_power_kw": 11.0
+    },
+    {
+      "vehicle_id": 1,
+      "battery_capacity_kwh": 75.0,
+      "arrival_hour": 16,
+      "departure_hour": 6,
+      "initial_soc": 0.30222794039807055,
+      "target_soc": 0.9286064305276953,
+      "energy_required_kwh": 46.97838675972186,
+      "max_charge_power_kw": 22.0
+    },
+    {
+      "vehicle_id": 2,
+      "battery_capacity_kwh": 80.0,
+      "arrival_hour": 17,
+      "departure_hour": 6,
+      "initial_soc": 0.22415960484651623,
+      "target_soc": 0.9426764988848602,
+      "energy_required_kwh": 57.48135152306752,
+      "max_charge_power_kw": 11.0
+    },
+    {
+      "vehicle_id": 3,
+      "battery_capacity_kwh": 75.0,
+      "arrival_hour": 18,
+      "departure_hour": 7,
+      "initial_soc": 0.23868283976546623,
+      "target_soc": 0.8727238721784777,
+      "energy_required_kwh": 47.55307743097586,
+      "max_charge_power_kw": 22.0
+    },
+    {
+      "vehicle_id": 4,
+      "battery_capacity_kwh": 80.0,
+      "arrival_hour": 16,
+      "departure_hour": 7,
+      "initial_soc": 0.3155262343985164,
+      "target_soc": 0.9131664399122065,
+      "energy_required_kwh": 47.8112164410952,
+      "max_charge_power_kw": 11.0
+    },
+    {
+      "vehicle_id": 5,
+      "battery_capacity_kwh": 80.0,
+      "arrival_hour": 16,
+      "departure_hour": 7,
+      "initial_soc": 0.34413960487898065,
+      "target_soc": 0.9393121121322198,
+      "energy_required_kwh": 47.61380058025913,
+      "max_charge_power_kw": 11.0
+    },
+    {
+      "vehicle_id": 6,
+      "battery_capacity_kwh": 80.0,
+      "arrival_hour": 18,
+      "departure_hour": 7,
+      "initial_soc": 0.2433442007454068,
+      "target_soc": 0.8543803765787229,
+      "energy_required_kwh": 48.88289406666529,
+      "max_charge_power_kw": 11.0
+    },
+    {
+      "vehicle_id": 7,
+      "battery_capacity_kwh": 80.0,
+      "arrival_hour": 17,
+      "departure_hour": 6,
+      "initial_soc": 0.29895243118156345,
+      "target_soc": 0.946750973243421,
+      "energy_required_kwh": 51.8238833649486,
+      "max_charge_power_kw": 22.0
+    },
+    {
+      "vehicle_id": 8,
+      "battery_capacity_kwh": 80.0,
+      "arrival_hour": 17,
+      "departure_hour": 6,
+      "initial_soc": 0.24391116225516157,
+      "target_soc": 0.8689471359084285,
+      "energy_required_kwh": 50.00287789226135,
+      "max_charge_power_kw": 11.0
+    },
+    {
+      "vehicle_id": 9,
+      "battery_capacity_kwh": 80.0,
+      "arrival_hour": 17,
+      "departure_hour": 6,
+      "initial_soc": 0.1953818698101768,
+      "target_soc": 0.916981399468251,
+      "energy_required_kwh": 57.72796237264593,
+      "max_charge_power_kw": 11.0
+    },
+    {
+      "vehicle_id": 10,
+      "battery_capacity_kwh": 60.0,
+      "arrival_hour": 18,
+      "departure_hour": 6,
+      "initial_soc": 0.2900530204004498,
+      "target_soc": 0.8812366641382041,
+      "energy_required_kwh": 35.47101862426526,
+      "max_charge_power_kw": 22.0
+    },
+    {
+      "vehicle_id": 11,
+      "battery_capacity_kwh": 75.0,
+      "arrival_hour": 18,
+      "departure_hour": 7,
+      "initial_soc": 0.22749567580603489,
+      "target_soc": 0.8788328103930244,
+      "energy_required_kwh": 48.850285094024215,
+      "max_charge_power_kw": 22.0
+    }
+  ]
+}

@@ -81,10 +81,10 @@
 ---
 
 ## 6. Main Real-Process Case Study (Track E)
-- [ ] Problem Domain: EV Fleet Smart Charging & Route Scheduling (Independent of F–J)
-- [ ] Section 4 Workflow Steps 1–7 executed
-- [ ] Strategy Selection Table completed (variables, constraints, size, hardware, parallelism)
-- [ ] Experimental comparison of at least two Chapter 6 methods against baseline
+- [x] **Problem Domain**: EV Fleet Smart Charging & Route Scheduling (Independent of F–J) (`track_E_case_study/src/ev_charging_problem.py`)
+- [x] **Section 4 Workflow Steps 1–7 executed**: Process identification, baseline ASAP simulation, mathematical formulation, solver implementations, empirical benchmarks, and sensitivity analysis (`track_E_case_study/results/ev_fleet_metrics.md`)
+- [x] **Strategy Selection Table completed**: Continuous vs Linearized vs Greedy comparison across variables, constraints, size, hardware, and parallelism (`track_E_case_study/results/ev_fleet_metrics.md`)
+- [x] **Experimental comparison of at least two Chapter 6 methods against baseline**: Uncontrolled ASAP vs Continuous Convex (SLSQP) vs Linear Programming (HiGHS) vs Priority Greedy (`track_E_case_study/results/ev_fleet_metrics.csv`, `track_E_case_study/results/ev_fleet_charging_profiles.png`)
 
 ---
 
