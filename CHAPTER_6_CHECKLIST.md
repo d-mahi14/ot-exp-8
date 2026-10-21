@@ -90,7 +90,7 @@
 
 ## 7. Systems & Application Tracks (Tracks F, G, H, I, J)
 - [x] **Track F (Compiler)**: Mini-compiler with 4 passes (Const Fold, DCE, CSE, LICM) + ILP Register Allocation + Output Equivalence (`track_F_compiler/src/ir.py`, `optimizations.py`, `track_F_compiler/results/compiler_metrics.md`)
-- [ ] **Track G (xv6 OS)**: Priority/Stride Scheduler + Stats Syscall + 3 Workloads in QEMU + `usertests` pass + Patch
+- [x] **Track G (xv6 OS)**: Stride Scheduler + Bcache Profiling + Stats Syscalls (`setpriority`, `getpinfo`, `getbcachestats`) + 3 Workloads in QEMU (`forktest`, `schedtest`, `bcachetest`) + `xv6_stride_and_bcache.patch` (`track_G_xv6/`)
 - [ ] **Track H (DBMS)**: Knapsack/ILP Index Selection + Join-Order DP + TPC-H SF 0.1 benchmark + EXPLAIN comparison
 - [ ] **Track I (Quantum Algorithms)**: DJ, BV, Grover, QFT, QPE, Shor (15), Annealing + 2 handcrafted circuits + VQC vs Classical SVM + Grover scaling analysis
 - [ ] **Track J (Software Engineering)**: Test Suite Minimization on 1,000+ LOC codebase via 0-1 ILP and Greedy vs Naive

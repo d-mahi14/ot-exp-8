@@ -1,0 +1,759 @@
+--- clean-xv6/Makefile	2026-10-21 18:49:37.339482908 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/Makefile	2026-10-21 18:41:20.379703600 +0000
+@@ -151,6 +151,8 @@
+ 	$U/_forphan\
+ 	$U/_dorphan\
+ 	$U/_sync\
++	$U/_schedtest\
++	$U/_bcachetest\
+ 
+ fs.img: mkfs/mkfs README $(UPROGS)
+ 	mkfs/mkfs fs.img README $(UPROGS)
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/kernel/bio.c /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/bio.c
+--- clean-xv6/kernel/bio.c	2026-10-21 18:49:37.339482908 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/bio.c	2026-10-21 18:42:13.766336400 +0000
+@@ -21,6 +21,13 @@
+ #include "defs.h"
+ #include "fs.h"
+ #include "buf.h"
++#include "proc.h"
++#include "pstat.h"
++
++uint64 bcache_lookups = 0;
++uint64 bcache_hits = 0;
++uint64 bcache_misses = 0;
++uint64 bcache_writes = 0;
+ 
+ struct {
+   struct spinlock lock;
+@@ -60,10 +67,12 @@
+   struct buf *b;
+ 
+   acquire(&bcache.lock);
++  bcache_lookups++;
+ 
+   // Is the block already cached?
+   for (b = bcache.head.next; b != &bcache.head; b = b->next) {
+     if (b->dev == dev && b->blockno == blockno) {
++      bcache_hits++;
+       b->refcnt++;
+       release(&bcache.lock);
+       acquiresleep(&b->lock);
+@@ -72,6 +81,7 @@
+   }
+ 
+   // Not cached.
++  bcache_misses++;
+   // Recycle the least recently used (LRU) unused buffer.
+   for (b = bcache.head.prev; b != &bcache.head; b = b->prev) {
+     if (b->refcnt == 0) {
+@@ -108,6 +118,9 @@
+ {
+   if (!holdingsleep(&b->lock))
+     panic("bwrite");
++  acquire(&bcache.lock);
++  bcache_writes++;
++  release(&bcache.lock);
+   virtio_disk_rw(b, 1);
+ }
+ 
+@@ -151,3 +164,23 @@
+   b->refcnt--;
+   release(&bcache.lock);
+ }
++
++// Copy buffer cache profiling metrics to user-space
++int
++getbcachestats(uint64 addr)
++{
++  struct bcache_stats st;
++  acquire(&bcache.lock);
++  st.lookups = bcache_lookups;
++  st.hits = bcache_hits;
++  st.misses = bcache_misses;
++  st.writes = bcache_writes;
++  release(&bcache.lock);
++
++  struct proc *curr = myproc();
++  if (copyout(curr->pagetable, curr->sz, addr, (char *)&st, sizeof(st)) < 0)
++    return -1;
++
++  return 0;
++}
++
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/kernel/defs.h /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/defs.h
+--- clean-xv6/kernel/defs.h	2026-10-21 18:49:37.339732033 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/defs.h	2026-10-21 18:40:15.326999500 +0000
+@@ -17,6 +17,7 @@
+ void            bwrite(struct buf*);
+ void            bpin(struct buf*);
+ void            bunpin(struct buf*);
++int             getbcachestats(uint64);
+ 
+ // console.c
+ void            consoleinit(void);
+@@ -103,6 +104,8 @@
+ int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
+ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
+ void            procdump(void);
++int             setpriority(int, int);
++int             getpinfo(uint64);
+ 
+ // swtch.S
+ void            swtch(struct context*, struct context*);
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/kernel/proc.c /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/proc.c
+--- clean-xv6/kernel/proc.c	2026-10-21 18:49:37.339732033 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/proc.c	2026-10-21 18:41:58.552935600 +0000
+@@ -5,6 +5,9 @@
+ #include "spinlock.h"
+ #include "proc.h"
+ #include "defs.h"
++#include "pstat.h"
++
++int global_min_pass = 0;
+ 
+ struct cpu cpus[NCPU];
+ 
+@@ -146,6 +149,11 @@
+   p->context.ra = (uint64)forkret;
+   p->context.sp = p->kstack + PGSIZE;
+ 
++  p->tickets = 10;
++  p->stride = 10000 / 10;
++  p->pass = global_min_pass;
++  p->rtime = 0;
++
+   return p;
+ }
+ 
+@@ -291,6 +299,11 @@
+ 
+   pid = np->pid;
+ 
++  np->tickets = p->tickets;
++  np->stride = p->stride;
++  np->pass = p->pass;
++  np->rtime = 0;
++
+   release(&np->lock);
+ 
+   acquire(&wait_lock);
+@@ -441,28 +454,41 @@
+     intr_on();
+     intr_off();
+ 
+-    int found = 0;
++    struct proc *best_p = 0;
++    int min_pass = 2147483647;
++
+     for (p = proc; p < &proc[NPROC]; p++) {
+       acquire(&p->lock);
+       if (p->state == RUNNABLE) {
+-        // Switch to chosen process.  It is the process's job
+-        // to release its lock and then reacquire it
+-        // before jumping back to us.
+-        p->state = RUNNING;
+-        c->proc = p;
+-        swtch(&c->context, &p->context);
+-
+-        // Don't re-enable interrupts on release.
+-        mycpu()->intena = 0;
+-
+-        // Process is done running for now.
+-        // It should have changed its p->state before coming back.
+-        c->proc = 0;
+-        found = 1;
++        if (best_p == 0 || p->pass < min_pass) {
++          if (best_p)
++            release(&best_p->lock);
++          best_p = p;
++          min_pass = p->pass;
++          continue; // keep best_p->lock held
++        }
+       }
+       release(&p->lock);
+     }
+-    if (found == 0) {
++
++    if (best_p != 0) {
++      best_p->state = RUNNING;
++      c->proc = best_p;
++      global_min_pass = best_p->pass;
++      swtch(&c->context, &best_p->context);
++
++      // Don't re-enable interrupts on release.
++      mycpu()->intena = 0;
++
++      // Advance pass and accumulated runtime ticks under lock
++      best_p->pass += best_p->stride;
++      best_p->rtime += 1;
++
++      // Process is done running for now.
++      // It should have changed its p->state before coming back.
++      c->proc = 0;
++      release(&best_p->lock);
++    } else {
+       // nothing to run; stop running on this core until an interrupt.
+       asm volatile("wfi");
+     }
+@@ -585,9 +611,12 @@
+       p->chan = 0;
+ 
+       // If this waiting process has gotten so far as to actually
+-      // go to sleep, also set it back to RUNNING.
++      // go to sleep, also set it back to RUNNABLE.
+       if (p->state == SLEEPING) {
+         p->state = RUNNABLE;
++        // Prevent starvation/burst when waking up after long sleep
++        if (p->pass < global_min_pass)
++          p->pass = global_min_pass;
+       }
+     }
+     release(&p->lock);
+@@ -701,3 +730,56 @@
+     printk("\n");
+   }
+ }
++
++// Set tickets (1..100) for a process
++int
++setpriority(int pid, int tickets)
++{
++  if (tickets < 1 || tickets > 100)
++    return -1;
++
++  struct proc *p;
++  for (p = proc; p < &proc[NPROC]; p++) {
++    acquire(&p->lock);
++    if (p->pid == pid) {
++      p->tickets = tickets;
++      p->stride = 10000 / tickets;
++      release(&p->lock);
++      return 0;
++    }
++    release(&p->lock);
++  }
++  return -1;
++}
++
++// Retrieve process table scheduling statistics
++int
++getpinfo(uint64 addr)
++{
++  struct proc *curr = myproc();
++  struct pstat ps;
++  struct proc *p;
++  int i = 0;
++
++  memset(&ps, 0, sizeof(ps));
++
++  for (p = proc; p < &proc[NPROC]; p++, i++) {
++    acquire(&p->lock);
++    if (p->state != UNUSED) {
++      ps.inuse[i] = 1;
++      ps.pid[i] = p->pid;
++      ps.tickets[i] = p->tickets;
++      ps.stride[i] = p->stride;
++      ps.pass[i] = p->pass;
++      ps.rtime[i] = p->rtime;
++    } else {
++      ps.inuse[i] = 0;
++    }
++    release(&p->lock);
++  }
++
++  if (copyout(curr->pagetable, curr->sz, addr, (char *)&ps, sizeof(ps)) < 0)
++    return -1;
++
++  return 0;
++}
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/kernel/proc.h /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/proc.h
+--- clean-xv6/kernel/proc.h	2026-10-21 18:49:37.339732033 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/proc.h	2026-10-21 18:38:16.473846100 +0000
+@@ -101,4 +101,10 @@
+   struct file *ofile[NOFILE];  // Open files
+   struct inode *cwd;           // Current directory
+   char name[16];               // Process name (debugging)
++
++  // Stride scheduling fields
++  int tickets;                 // Allocated lottery/stride tickets (1..100)
++  int stride;                  // Stride value (STRIDE_CONSTANT / tickets)
++  int pass;                    // Virtual pass value
++  int rtime;                   // Accumulated CPU runtime ticks
+ };
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/kernel/pstat.h /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/pstat.h
+--- clean-xv6/kernel/pstat.h	1970-01-01 00:00:00.000000000 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/pstat.h	2026-10-21 18:38:03.916846000 +0000
+@@ -0,0 +1,22 @@
++#ifndef _PSTAT_H_
++#define _PSTAT_H_
++
++#include "param.h"
++
++struct pstat {
++  int inuse[NPROC];   // whether this slot of the process table is in use (1 or 0)
++  int pid[NPROC];     // PID of each process
++  int tickets[NPROC]; // tickets of each process
++  int stride[NPROC];  // stride of each process
++  int pass[NPROC];    // current pass value
++  int rtime[NPROC];   // total ticks process has accumulated
++};
++
++struct bcache_stats {
++  uint64 lookups;
++  uint64 hits;
++  uint64 misses;
++  uint64 writes;
++};
++
++#endif
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/kernel/syscall.c /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/syscall.c
+--- clean-xv6/kernel/syscall.c	2026-10-21 18:49:37.339732033 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/syscall.c	2026-10-21 18:39:50.759909900 +0000
+@@ -103,6 +103,9 @@
+ extern uint64 sys_mkdir(void);
+ extern uint64 sys_close(void);
+ extern uint64 sys_sync(void);
++extern uint64 sys_setpriority(void);
++extern uint64 sys_getpinfo(void);
++extern uint64 sys_getbcachestats(void);
+ 
+ // An array mapping syscall numbers from syscall.h
+ // to the function that handles the system call.
+@@ -130,6 +133,9 @@
+   [SYS_mkdir]   = sys_mkdir,
+   [SYS_close]   = sys_close,
+   [SYS_sync]    = sys_sync,
++  [SYS_setpriority]    = sys_setpriority,
++  [SYS_getpinfo]       = sys_getpinfo,
++  [SYS_getbcachestats] = sys_getbcachestats,
+   // clang-format on
+ };
+ 
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/kernel/syscall.h /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/syscall.h
+--- clean-xv6/kernel/syscall.h	2026-10-21 18:49:37.339732033 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/syscall.h	2026-10-21 18:39:35.399749400 +0000
+@@ -21,3 +21,6 @@
+ #define SYS_mkdir  20
+ #define SYS_close  21
+ #define SYS_sync   22
++#define SYS_setpriority    23
++#define SYS_getpinfo       24
++#define SYS_getbcachestats 25
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/kernel/sysproc.c /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/sysproc.c
+--- clean-xv6/kernel/sysproc.c	2026-10-21 18:49:37.339732033 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/kernel/sysproc.c	2026-10-21 18:40:02.128016200 +0000
+@@ -110,3 +110,29 @@
+   release(&tickslock);
+   return xticks;
+ }
++
++uint64
++sys_setpriority(void)
++{
++  int pid, tickets;
++  argint(0, &pid);
++  argint(1, &tickets);
++  return setpriority(pid, tickets);
++}
++
++uint64
++sys_getpinfo(void)
++{
++  uint64 addr;
++  argaddr(0, &addr);
++  return getpinfo(addr);
++}
++
++uint64
++sys_getbcachestats(void)
++{
++  uint64 addr;
++  argaddr(0, &addr);
++  return getbcachestats(addr);
++}
++
+Binary files clean-xv6/user/_bcachetest and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_bcachetest differ
+Binary files clean-xv6/user/_cat and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_cat differ
+Binary files clean-xv6/user/_dorphan and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_dorphan differ
+Binary files clean-xv6/user/_echo and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_echo differ
+Binary files clean-xv6/user/_forktest and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_forktest differ
+Binary files clean-xv6/user/_forphan and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_forphan differ
+Binary files clean-xv6/user/_grep and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_grep differ
+Binary files clean-xv6/user/_grind and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_grind differ
+Binary files clean-xv6/user/_init and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_init differ
+Binary files clean-xv6/user/_kill and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_kill differ
+Binary files clean-xv6/user/_ln and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_ln differ
+Binary files clean-xv6/user/_logstress and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_logstress differ
+Binary files clean-xv6/user/_ls and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_ls differ
+Binary files clean-xv6/user/_mkdir and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_mkdir differ
+Binary files clean-xv6/user/_rm and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_rm differ
+Binary files clean-xv6/user/_schedtest and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_schedtest differ
+Binary files clean-xv6/user/_sh and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_sh differ
+Binary files clean-xv6/user/_stressfs and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_stressfs differ
+Binary files clean-xv6/user/_sync and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_sync differ
+Binary files clean-xv6/user/_usertests and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_usertests differ
+Binary files clean-xv6/user/_wc and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_wc differ
+Binary files clean-xv6/user/_zombie and /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/_zombie differ
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/user/bcachetest.c /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/bcachetest.c
+--- clean-xv6/user/bcachetest.c	1970-01-01 00:00:00.000000000 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/bcachetest.c	2026-10-21 18:41:09.495021100 +0000
+@@ -0,0 +1,109 @@
++#include "kernel/types.h"
++#include "kernel/stat.h"
++#include "kernel/pstat.h"
++#include "kernel/fs.h"
++#include "kernel/fcntl.h"
++#include "user/user.h"
++
++#define BLOCK_SIZE 1024
++
++void
++write_file(const char *path, int num_blocks)
++{
++  char buf[BLOCK_SIZE];
++  memset(buf, 'A', sizeof(buf));
++  int fd = open(path, O_CREATE | O_WRONLY);
++  if (fd < 0) {
++    printf("error opening %s for write\n", path);
++    exit(1);
++  }
++  for (int i = 0; i < num_blocks; i++) {
++    buf[0] = (char)('A' + (i % 26));
++    if (write(fd, buf, BLOCK_SIZE) != BLOCK_SIZE) {
++      printf("write error in block %d\n", i);
++      close(fd);
++      exit(1);
++    }
++  }
++  close(fd);
++}
++
++void
++read_file(const char *path, int num_blocks)
++{
++  char buf[BLOCK_SIZE];
++  int fd = open(path, O_RDONLY);
++  if (fd < 0) {
++    printf("error opening %s for read\n", path);
++    exit(1);
++  }
++  for (int i = 0; i < num_blocks; i++) {
++    if (read(fd, buf, BLOCK_SIZE) != BLOCK_SIZE) {
++      break;
++    }
++  }
++  close(fd);
++}
++
++int
++main(int argc, char *argv[])
++{
++  struct bcache_stats st0, st1, st2, st3;
++
++  printf("=== xv6 Buffer Cache Instrumentation Benchmark ===\n");
++
++  // Step 1: Baseline / Initial stats
++  if (getbcachestats(&st0) < 0) {
++    printf("getbcachestats failed!\n");
++    exit(1);
++  }
++  printf("Initial stats: lookups=%ld hits=%ld misses=%ld writes=%ld\n",
++         st0.lookups, st0.hits, st0.misses, st0.writes);
++
++  // Step 2: Write a working set file (15 blocks, comfortably within NBUF=30)
++  printf("Writing 15-block working set file...\n");
++  write_file("cache_ws.dat", 15);
++
++  // Step 3: First read pass (warm-up pass)
++  read_file("cache_ws.dat", 15);
++  getbcachestats(&st1);
++  uint64 d_lookups1 = st1.lookups - st0.lookups;
++  uint64 d_hits1 = st1.hits - st0.hits;
++  uint64 d_misses1 = st1.misses - st0.misses;
++  printf("Pass 1 (Warmup): lookups=%ld hits=%ld misses=%ld\n",
++         d_lookups1, d_hits1, d_misses1);
++
++  // Step 4: Second read pass (cached / warm pass)
++  read_file("cache_ws.dat", 15);
++  getbcachestats(&st2);
++  uint64 d_lookups2 = st2.lookups - st1.lookups;
++  uint64 d_hits2 = st2.hits - st1.hits;
++  uint64 d_misses2 = st2.misses - st1.misses;
++  int hit_pct = d_lookups2 > 0 ? (int)((d_hits2 * 100) / d_lookups2) : 0;
++  printf("Pass 2 (Cached): lookups=%ld hits=%ld misses=%ld hit_pct=%d%%\n",
++         d_lookups2, d_hits2, d_misses2, hit_pct);
++  printf("RESULT_BCACHE phase=warm lookups=%ld hits=%ld misses=%ld hit_pct=%d\n",
++         d_lookups2, d_hits2, d_misses2, hit_pct);
++
++  // Step 5: Thrashing pass (40 blocks, exceeds NBUF=30)
++  printf("Writing 40-block thrash file (> NBUF 30)...\n");
++  write_file("cache_thrash.dat", 40);
++  getbcachestats(&st2); // re-baseline before read
++  read_file("cache_thrash.dat", 40);
++  getbcachestats(&st3);
++  uint64 d_lookups3 = st3.lookups - st2.lookups;
++  uint64 d_hits3 = st3.hits - st2.hits;
++  uint64 d_misses3 = st3.misses - st2.misses;
++  int thrash_miss_pct = d_lookups3 > 0 ? (int)((d_misses3 * 100) / d_lookups3) : 0;
++  printf("Pass 3 (Thrash): lookups=%ld hits=%ld misses=%ld miss_pct=%d%%\n",
++         d_lookups3, d_hits3, d_misses3, thrash_miss_pct);
++  printf("RESULT_BCACHE phase=thrash lookups=%ld hits=%ld misses=%ld miss_pct=%d\n",
++         d_lookups3, d_hits3, d_misses3, thrash_miss_pct);
++
++  // Clean up files
++  unlink("cache_ws.dat");
++  unlink("cache_thrash.dat");
++
++  printf("=== Buffer Cache Benchmark Completed ===\n");
++  exit(0);
++}
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/user/schedtest.c /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/schedtest.c
+--- clean-xv6/user/schedtest.c	1970-01-01 00:00:00.000000000 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/schedtest.c	2026-10-21 18:45:32.674696300 +0000
+@@ -0,0 +1,89 @@
++#include "kernel/types.h"
++#include "kernel/stat.h"
++#include "kernel/pstat.h"
++#include "user/user.h"
++
++#define NCHILD 3
++
++void
++spin_work(int iterations)
++{
++  volatile long sum = 0;
++  for (volatile int i = 0; i < iterations; i++) {
++    sum += (i * 3) ^ (i >> 2);
++  }
++}
++
++int
++main(int argc, char *argv[])
++{
++  int tickets[NCHILD] = {10, 20, 30};
++  int pids[NCHILD];
++
++  printf("=== xv6 Stride Scheduling Benchmark ===\n");
++  printf("Configured %d processes with tickets 10 : 20 : 30 (1 : 2 : 3)\n", NCHILD);
++
++  // Set parent priority to default
++  setpriority(getpid(), 10);
++  int t0 = uptime();
++
++  for (int i = 0; i < NCHILD; i++) {
++    int pid = fork();
++    if (pid < 0) {
++      printf("fork failed\n");
++      exit(1);
++    }
++    if (pid == 0) {
++      // Child process sets its priority/tickets
++      int mypid = getpid();
++      if (setpriority(mypid, tickets[i]) < 0) {
++        printf("setpriority failed for child %d\n", i);
++        exit(1);
++      }
++
++      // Execute compute-intensive workload
++      spin_work(350000000);
++
++      int t_finish = uptime();
++      int turnaround = t_finish - t0;
++
++      // Query process telemetry before exit
++      struct pstat ps;
++      if (getpinfo(&ps) == 0) {
++        for (int j = 0; j < NPROC; j++) {
++          if (ps.inuse[j] && ps.pid[j] == mypid) {
++            printf("RESULT_SCHED child=%d pid=%d tickets=%d stride=%d pass=%d rtime=%d turnaround=%d\n",
++                   i + 1, mypid, ps.tickets[j], ps.stride[j], ps.pass[j], ps.rtime[j], turnaround);
++            break;
++          }
++        }
++      }
++      exit(0);
++    }
++    pids[i] = pid;
++  }
++
++  // Parent takes a concurrent progress snapshot during execution
++  pause(8); // wait ~8 ticks for concurrent execution
++  struct pstat snap_ps;
++  if (getpinfo(&snap_ps) == 0) {
++    int snap_rtime[NCHILD] = {0, 0, 0};
++    for (int j = 0; j < NPROC; j++) {
++      for (int k = 0; k < NCHILD; k++) {
++        if (snap_ps.inuse[j] && snap_ps.pid[j] == pids[k]) {
++          snap_rtime[k] = snap_ps.rtime[j];
++        }
++      }
++    }
++    printf("SNAPSHOT_SCHED rtime1=%d rtime2=%d rtime3=%d\n",
++           snap_rtime[0], snap_rtime[1], snap_rtime[2]);
++  }
++
++  // Parent waits for all children
++  for (int i = 0; i < NCHILD; i++) {
++    wait(0);
++  }
++
++  printf("=== Benchmark Completed Successfully ===\n");
++  exit(0);
++}
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/user/user.h /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/user.h
+--- clean-xv6/user/user.h	2026-10-21 18:49:37.341280878 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/user.h	2026-10-21 18:40:24.558344000 +0000
+@@ -25,6 +25,11 @@
+ int pause(int);
+ int uptime(void);
+ int sync(void);
++struct pstat;
++struct bcache_stats;
++int setpriority(int, int);
++int getpinfo(struct pstat *);
++int getbcachestats(struct bcache_stats *);
+ 
+ // ulib.c
+ int stat(const char *, struct stat *);
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/user/usys.S /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/usys.S
+--- clean-xv6/user/usys.S	1970-01-01 00:00:00.000000000 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/usys.S	2026-10-21 18:42:58.492402000 +0000
+@@ -0,0 +1,127 @@
++# generated by usys.pl - do not edit
++#include "kernel/syscall.h"
++.global fork
++fork:
++ li a7, SYS_fork
++ ecall
++ ret
++.global exit
++exit:
++ li a7, SYS_exit
++ ecall
++ ret
++.global wait
++wait:
++ li a7, SYS_wait
++ ecall
++ ret
++.global pipe
++pipe:
++ li a7, SYS_pipe
++ ecall
++ ret
++.global read
++read:
++ li a7, SYS_read
++ ecall
++ ret
++.global write
++write:
++ li a7, SYS_write
++ ecall
++ ret
++.global close
++close:
++ li a7, SYS_close
++ ecall
++ ret
++.global kill
++kill:
++ li a7, SYS_kill
++ ecall
++ ret
++.global exec
++exec:
++ li a7, SYS_exec
++ ecall
++ ret
++.global open
++open:
++ li a7, SYS_open
++ ecall
++ ret
++.global mknod
++mknod:
++ li a7, SYS_mknod
++ ecall
++ ret
++.global unlink
++unlink:
++ li a7, SYS_unlink
++ ecall
++ ret
++.global fstat
++fstat:
++ li a7, SYS_fstat
++ ecall
++ ret
++.global link
++link:
++ li a7, SYS_link
++ ecall
++ ret
++.global mkdir
++mkdir:
++ li a7, SYS_mkdir
++ ecall
++ ret
++.global chdir
++chdir:
++ li a7, SYS_chdir
++ ecall
++ ret
++.global dup
++dup:
++ li a7, SYS_dup
++ ecall
++ ret
++.global getpid
++getpid:
++ li a7, SYS_getpid
++ ecall
++ ret
++.global sys_sbrk
++sys_sbrk:
++ li a7, SYS_sbrk
++ ecall
++ ret
++.global pause
++pause:
++ li a7, SYS_pause
++ ecall
++ ret
++.global uptime
++uptime:
++ li a7, SYS_uptime
++ ecall
++ ret
++.global sync
++sync:
++ li a7, SYS_sync
++ ecall
++ ret
++.global setpriority
++setpriority:
++ li a7, SYS_setpriority
++ ecall
++ ret
++.global getpinfo
++getpinfo:
++ li a7, SYS_getpinfo
++ ecall
++ ret
++.global getbcachestats
++getbcachestats:
++ li a7, SYS_getbcachestats
++ ecall
++ ret
+diff -u -r -N -x '*.o' -x '*.d' -x '*.asm' -x '*.sym' -x fs.img -x kernel clean-xv6/user/usys.pl /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/usys.pl
+--- clean-xv6/user/usys.pl	2026-10-21 18:49:37.341280878 +0000
++++ /mnt/c/dev/ot-8/track_G_xv6/xv6-riscv/user/usys.pl	2026-10-21 18:40:33.588307900 +0000
+@@ -43,3 +43,6 @@
+ entry("pause");
+ entry("uptime");
+ entry("sync");
++entry("setpriority");
++entry("getpinfo");
++entry("getbcachestats");

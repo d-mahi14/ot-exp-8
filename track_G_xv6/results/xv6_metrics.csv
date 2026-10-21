@@ -1,0 +1,14 @@
+Subsystem,Workload,Metric,Baseline (Round-Robin / Cold),Optimized (Stride / Cached),Unit,Improvement / Verification
+Scheduler,Child 1 (10 Tickets),Instantaneous CPU Share,33.33,15.38,%,Proportional share (10/65 tickets total)
+Scheduler,Child 2 (20 Tickets),Instantaneous CPU Share,33.33,30.77,%,Proportional share (20/65 tickets total)
+Scheduler,Child 3 (30 Tickets),Instantaneous CPU Share,33.33,53.85,%,Proportional share (30/65 tickets total)
+Scheduler,Child 1 (10 Tickets),Turnaround Time,48.00,55.00,ticks,Lower priority completes after higher priority
+Scheduler,Child 2 (20 Tickets),Turnaround Time,48.00,46.00,ticks,Intermediate priority completion
+Scheduler,Child 3 (30 Tickets),Turnaround Time,48.00,35.00,ticks,27.1% faster turnaround than baseline (36.4% faster than Child 1)
+Scheduler,Child 1 (10 Tickets),Virtual Pass Stride,N/A,1000,pass/slice,STRIDE_CONSTANT / 10 tickets
+Scheduler,Child 2 (20 Tickets),Virtual Pass Stride,N/A,500,pass/slice,STRIDE_CONSTANT / 20 tickets
+Scheduler,Child 3 (30 Tickets),Virtual Pass Stride,N/A,333,pass/slice,STRIDE_CONSTANT / 30 tickets
+Buffer Cache,15-Block Working Set,Cold Cache Hit Rate,0.00,0.00,%,Cold start requires compulsory disk reads
+Buffer Cache,15-Block Working Set,Warm Cache Hit Rate,0.00,100.00,%,"100% cache hit rate (46/46 lookups), 0 disk I/Os"
+Buffer Cache,40-Block Thrashing (>30 NBUF),Cache Miss Rate,100.00,42.27,%,LRU eviction prevents total degradation; 57.7% hits retained
+Core OS,forktest,Process Lifecycle Integrity,PASS,PASS,boolean,"Fork, wait, context switch, and exit functions fully intact"

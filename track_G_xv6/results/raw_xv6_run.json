@@ -1,0 +1,6 @@
+{
+  "cpus": 1,
+  "fork_output": "forktest\r\nfork test\r\nfork test OK\r\n",
+  "sched_output": "schedtest\r\n=== xv6 Stride Scheduling Benchmark ===\r\nConfigured 3 processes with tickets 10 : 20 : 30 (1 : 2 : 3)\r\nSNAPSHOT_SCHED rtime1=2 rtime2=4 rtime3=7\r\nRESULT_SCHED child=3 pid=68 tickets=30 stride=333 pass=45661 rtime=17 turnaround=35\r\nRESULT_SCHED child=2 pid=67 tickets=20 stride=500 pass=49000 rtime=18 turnaround=46\r\nRESULT_SCHED child=1 pid=66 tickets=10 stride=1000 pass=59000 rtime=19 turnaround=55\r\n=== Benchmark Completed Successfully ===\r\n",
+  "bcache_output": "bcachetest\r\n=== xv6 Buffer Cache Instrumentation Benchmark ===\r\nInitial stats: lookups=378 hits=337 misses=41 writes=1\r\nWriting 15-block working set file...\r\nPass 1 (Warmup): lookups=532 hits=510 misses=22\r\nPass 2 (Cached): lookups=46 hits=46 misses=0 hit_pct=100%\r\nRESULT_BCACHE phase=warm lookups=46 hits=46 misses=0 hit_pct=100\r\nWriting 40-block thrash file (> NBUF 30)...\r\nPass 3 (Thrash): lookups=97 hits=56 misses=41 miss_pct=42%\r\nRESULT_BCACHE phase=thrash lookups=97 hits=56 misses=41 miss_pct=42\r\n=== Buffer Cache Benchmark Completed ===\r\n"
+}
