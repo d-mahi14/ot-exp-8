@@ -1,0 +1,6 @@
+benchmark,static_instr_orig,static_instr_opt,static_reduction_pct,dynamic_instr_orig,dynamic_instr_opt,dynamic_reduction_pct,cycles_orig,cycles_opt,cycle_speedup,ilp_spills_k4,output_verified,return_value
+polynomial_eval,18,1,94.44444444444444,18,1,94.44444444444444,25,1,25.0,0,True,231
+matrix_dot_loop,17,17,0.0,510,412,19.215686274509807,609,462,1.3181818181818181,1,True,6150
+common_subexpr_math,16,1,93.75,16,1,93.75,22,1,22.0,0,True,176
+iterative_fibonacci,14,14,0.0,129,129,0.0,128,128,1.0,1,True,610
+high_register_pressure,20,1,95.0,20,1,95.0,24,1,24.0,0,True,184
