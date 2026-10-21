@@ -47,7 +47,7 @@
 ---
 
 ## 4. Quantum Optimization (Track C)
-- [ ] **QAOA**: Quantum Approximate Optimization Algorithm ($p=1, 2$) on Track B QUBO
+- [x] **QAOA**: Quantum Approximate Optimization Algorithm ($p=1, 2, 3$) on Track B QUBO / Graph Max-Cut (`track_C_quantum/src/qaoa_maxcut.py`)
 - [ ] **VQE**: Variational Quantum Eigensolver on Ising Hamiltonian
 - [ ] **PQCs & QNNs**: Parameterized Quantum Circuits
 - [ ] **Quantum Gradients**:
