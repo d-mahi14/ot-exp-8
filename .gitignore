@@ -45,6 +45,11 @@ Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
 
+# SQLite binary databases
+*.db
+*.sqlite3
+!track_H_dbms/data/.gitkeep
+
 # xv6 build artifacts (compiled inside WSL/QEMU)
 track_G_xv6/xv6-riscv/
 !track_G_xv6/patch/

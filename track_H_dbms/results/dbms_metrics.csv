@@ -1,0 +1,11 @@
+Subsystem,Query / Optimization,Metric,Baseline (No Index / Unopt),Optimized,Speedup / Ratio,Storage Overhead (MB),Correctness
+Index Selection (ILP),Q1_Pricing_Summary,Latency (mean ms),38.78,118.70,0.33x,4.92 MB,PASS
+Index Selection (ILP),Q3_Shipping_Priority,Latency (mean ms),11.56,8.66,1.33x,4.92 MB,PASS
+Index Selection (ILP),Q5_Local_Supplier_Volume,Latency (mean ms),11.27,10.08,1.12x,4.92 MB,PASS
+Index Selection (ILP),Q6_Forecast_Revenue_Change,Latency (mean ms),7.36,0.52,14.23x,4.92 MB,PASS
+Index Selection (ILP),Q10_Returned_Item_Reporting,Latency (mean ms),10.51,7.42,1.42x,4.92 MB,PASS
+Budget Knapsack,Budget 2.0 MB,Objective Value (Greedy vs ILP),81.94,82.17,1.00x,1.81 MB,N/A
+Budget Knapsack,Budget 5.0 MB,Objective Value (Greedy vs ILP),121.19,83.04,0.69x,4.92 MB,N/A
+Budget Knapsack,Budget 10.0 MB,Objective Value (Greedy vs ILP),121.19,83.04,0.69x,4.92 MB,N/A
+Join-Order DP,TPC-H Q5 6-Table Join,Latency (mean ms),10.36,10.28,1.01x,0.00 MB,PASS
+Buffer-Pool Tuning,TPC-H Q1 Cache Sizing,Latency (mean ms),47.71,88.63,0.54x,62.00 MB RAM,PASS
