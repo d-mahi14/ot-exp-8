@@ -10,8 +10,11 @@ from typing import Dict, List, Tuple, Any, Optional
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.preprocessing import MinMaxScaler
+# pyrefly: ignore[missing-import]
 from qiskit import QuantumCircuit
+# pyrefly: ignore[missing-import]
 from qiskit.circuit import ParameterVector
+# pyrefly: ignore[missing-import]
 from qiskit.quantum_info import Statevector
 
 

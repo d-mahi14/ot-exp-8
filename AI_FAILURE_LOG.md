@@ -163,6 +163,30 @@
 
 ---
 
+### Failure Record 07: Omission of Defect-Detection Constraints in Test-Suite Minimization (The Coverage vs. Fault-Detection Gap)
+- **Track**: Track J (Software-Engineering Optimization)
+- **Date**: 2026-10-22
+- **AI Tool & Model**: Antigravity (Gemini 3.8 Flash)
+- **Prompt Reference**: [`prompts/track_J/prompt_01_software_engineering_optimization.md`](file:///c:/dev/ot-8/prompts/track_J/prompt_01_software_engineering_optimization.md)
+- **The AI Mistake**:
+  In the initial formulation of `ILPTestSuiteOptimizer` and `GreedySetCoverOptimizer`, the constraint matrix only enforced statement-level code line coverage:
+  $$\sum_{j=1}^n A_{ij} x_j \ge 1 \quad \forall \text{reachable lines } i$$
+  Although the resulting 0-1 ILP minimized suite achieved 100.0% statement coverage (467/467 lines) with an 18.2% test count reduction, the mutation score silently collapsed from 100.0% down to 86.7% (missing 2 out of 15 injected domain mutants: customer credit boundary condition and FIFO expiration handling).
+- **Why It Failed / Subtle Bug**:
+  The AI fell into the classic software engineering pitfall known as the **Coverage vs. Fault-Detection Gap** (Rothermel et al., 1998). In complex codebases, multiple tests can execute the exact same lines of code but with different input values, assertion checks, and edge-case boundaries. Minimizing test suites based purely on structural code coverage treats these tests as redundant and discards them, leading to an undetected drop in fault detection capability.
+- **Verification Method (How It Was Caught)**:
+  Caught during test execution of `run_track_j_benchmarks.py`, which printed:
+  `[0-1 ILP (HiGHS Branch-and-Cut)] Coverage=100.0%, MutationScore=86.7%`
+  and failed automated regression mutation assertions in `test_track_j.py`.
+- **The Fix**:
+  Augmented the ILP and Greedy optimization constraints by vertically stacking the statement coverage matrix $A \in \{0, 1\}^{m \times n}$ and the binary mutation kill matrix $M \in \{0, 1\}^{K \times n}$:
+  $$A_{\text{combined}} = \begin{bmatrix} A \\ M \end{bmatrix}, \quad A_{\text{combined}} x \ge \mathbf{1}$$
+  This simultaneously constrained the branch-and-cut solver to guarantee 100.0% line coverage AND 100.0% mutation fault retention (15/15 mutants killed), while successfully eliminating 27 genuinely redundant tests (33.8% reduction, 1.56x speedup).
+- **Viva Lesson Learned**:
+  Code coverage is a necessary but insufficient surrogate metric for test suite adequacy. Two tests executing identical statement paths may test entirely different boundary conditions or error handlers. Safe test suite minimization in real software systems must incorporate dual criteria: structural coverage constraints alongside mutation-testing or fault-history matrices.
+
+---
+
 ### Log Status
 - [x] **Failure 1**: Documented above (Track A: Script import resolution & dependency assumption).
 - [x] **Failure 2**: Documented above (Track A: Discrepancy between empirical metrics and textual analysis).
@@ -170,4 +194,5 @@
 - [x] **Failure 4**: Documented above (Track C: Observable eigenstate zero-variance in finite-shot scaling).
 - [x] **Failure 5**: Documented above (Track D: Python GIL and Windows Process Spawn Inversion in Parallel Scaling).
 - [x] **Failure 6**: Documented above (Track I: Over-Rotation in Grover's Search for N=4 Due to Asymptotic Formula Approximation).
+- [x] **Failure 7**: Documented above (Track J: The Coverage vs. Fault-Detection Gap in Test-Suite Minimization).
 

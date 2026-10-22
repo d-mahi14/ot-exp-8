@@ -93,4 +93,4 @@
 - [x] **Track G (xv6 OS)**: Stride Scheduler + Bcache Profiling + Stats Syscalls (`setpriority`, `getpinfo`, `getbcachestats`) + 3 Workloads in QEMU (`forktest`, `schedtest`, `bcachetest`) + `xv6_stride_and_bcache.patch` (`track_G_xv6/`)
 - [x] **Track H (DBMS)**: Knapsack/ILP Index Selection + Join-Order DP + TPC-H benchmark + EXPLAIN comparison (`track_H_dbms/src/`, `track_H_dbms/results/dbms_metrics.md`)
 - [x] **Track I (Quantum Algorithms & QML)**: DJ, BV, QFT, QPE, Shor (15=3x5), Grover Search with scaling vs Classical baseline + NISQ hardware noise modeling + QSVM vs Classical RBF/Linear SVM (`track_I_quantum_algorithms/src/`, `track_I_quantum_algorithms/results/track_i_metrics.md`, `track_i_benchmarks.png`)
-- [ ] **Track J (Software Engineering)**: Test Suite Minimization on 1,000+ LOC codebase via 0-1 ILP and Greedy vs Naive
+- [x] **Track J (Software Engineering)**: Test Suite Minimization on 1,055 LOC enterprise codebase via 0-1 ILP (HiGHS) and Greedy (Chvátal) vs Naive & Random Baselines (`track_J_software_engineering/src/`, `track_J_software_engineering/results/track_j_metrics.md`, `track_j_benchmarks.png`)

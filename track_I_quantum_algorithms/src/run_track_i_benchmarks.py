@@ -185,12 +185,13 @@ def run_all_benchmarks():
     print("\n--- 4. Quantum Machine Learning (QSVM) vs Classical SVM ---")
     np.random.seed(42)
     # Generate structured non-linear classification dataset
-    X_data, y_data = make_blobs(
+    blobs_data = make_blobs(
         n_samples=70,
         centers=[[-1.2, -1.2], [1.2, 1.2]],
         cluster_std=0.85,
         random_state=42
     )
+    X_data, y_data = blobs_data[0], blobs_data[1]
     X_tr, X_te, y_tr, y_te = train_test_split(
         X_data, y_data, test_size=0.30, random_state=42, stratify=y_data
     )

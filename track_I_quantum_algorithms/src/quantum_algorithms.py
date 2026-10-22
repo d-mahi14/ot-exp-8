@@ -11,9 +11,12 @@ Quantum Algorithms Implementations:
 import math
 import numpy as np
 from typing import Dict, List, Tuple, Any, Optional
+# pyrefly: ignore[missing-import]
 from qiskit import QuantumCircuit, transpile
+# pyrefly: ignore[missing-import]
 from qiskit_aer import AerSimulator
-from qiskit.quantum_info import Statevector, Operator
+# pyrefly: ignore[missing-import]
+from qiskit.quantum_info import Operator
 
 
 # =====================================================================

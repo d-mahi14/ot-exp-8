@@ -7,7 +7,9 @@ NISQ noise evaluation, Quantum Kernel Estimation (QSVM), and benchmark artifacts
 import os
 import math
 import numpy as np
+# pyrefly: ignore[missing-import]
 import pytest
+# pyrefly: ignore[missing-import]
 from qiskit.quantum_info import Operator
 from sklearn.datasets import make_blobs
 from sklearn.model_selection import train_test_split
@@ -137,12 +139,13 @@ def test_quantum_kernel_properties():
 
 def test_qml_vs_classical_svm():
     """Verifies QSVM achieves competitive test accuracy (>=80%) on structured classification."""
-    X_data, y_data = make_blobs(
+    blobs_data = make_blobs(
         n_samples=50,
         centers=[[-1.2, -1.2], [1.2, 1.2]],
         cluster_std=0.8,
         random_state=42
     )
+    X_data, y_data = blobs_data[0], blobs_data[1]
     X_tr, X_te, y_tr, y_te = train_test_split(
         X_data, y_data, test_size=0.30, random_state=42, stratify=y_data
     )
