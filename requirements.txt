@@ -14,6 +14,7 @@ qiskit-aer>=0.14.0
 
 # Machine Learning & Multi-task (PyTorch is also pre-installed)
 torch>=2.2.0
+scikit-learn>=1.4.0
 
 # PDF Generation for Prompt Logging
 reportlab>=4.1.0

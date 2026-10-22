@@ -47,12 +47,14 @@ wsl -d Ubuntu -- sudo apt update && wsl -d Ubuntu -- sudo apt install -y gcc-ris
 
 ## 3. Strict Vibe-Coding Documentation & Audit Trail
 
-Per Section 8 of the assignment specification:
+Per Section 8 and Section 9 of the assignment specification:
+- **Comprehensive Technical Report**: [`report/TECHNICAL_REPORT.md`](report/TECHNICAL_REPORT.md) contains in-depth analysis, Strategy Selection Table, outcomes, and answers to all 10 Final Questions.
 - **Master Prompt Index**: [`PROMPT_LOG.md`](PROMPT_LOG.md) lists every single interaction chronologically.
 - **Compiled PDF**: [`AI_Prompt_Log.pdf`](AI_Prompt_Log.pdf) is automatically compiled via ReportLab from all Markdown files in `prompts/`.
 - **AI Tools Register**: [`AI_TOOLS_REGISTER.md`](AI_TOOLS_REGISTER.md) lists tools (Antigravity & Claude), dates, and tasks.
-- **Failure Log**: [`AI_FAILURE_LOG.md`](AI_FAILURE_LOG.md) documents genuine AI errors, independent tests that caught them, fixes, and lessons.
+- **Failure Log**: [`AI_FAILURE_LOG.md`](AI_FAILURE_LOG.md) documents 7 genuine AI errors, independent tests that caught them, fixes, and lessons.
 - **Chapter 6 Traceability Matrix**: [`CHAPTER_6_CHECKLIST.md`](CHAPTER_6_CHECKLIST.md) maps every required syllabus technique to its code and results.
+- **Dual-AI Tool Comparison**: [`prompts/general/tool_comparison_antigravity_vs_claude.md`](prompts/general/tool_comparison_antigravity_vs_claude.md) details the comparison setup and prompts.
 
 To recompile the master prompt PDF at any time:
 ```powershell
@@ -71,8 +73,24 @@ py -3.12 scripts/generate_prompt_pdf.py
 ---
 
 ## 5. Verification & Testing
+
 Every track includes an automated test suite under `tests/` asserting mathematical correctness and baseline comparison:
 ```powershell
-# Run all unit and convergence tests
-py -3.12 -m pytest
+# 1. Run all 151 unit and convergence tests across Tracks A through J:
+py -3.12 -m pytest -v
+
+# 2. Reproduce individual track benchmarks and generate CSV/MD/PNG artifacts:
+py -3.12 track_A_continuous/experiments/run_first_order_benchmarks.py
+py -3.12 track_A_continuous/experiments/run_second_order_benchmarks.py
+py -3.12 track_B_discrete/src/run_knapsack_benchmarks.py
+py -3.12 track_B_discrete/src/run_qubo_benchmarks.py
+py -3.12 track_C_quantum/src/run_qaoa_benchmarks.py
+py -3.12 track_C_quantum/src/run_vqe_benchmarks.py
+py -3.12 track_C_quantum/src/run_quantum_advanced_benchmarks.py
+py -3.12 track_D_submodular_parallel/src/run_track_d_benchmarks.py
+py -3.12 track_E_case_study/src/run_ev_benchmarks.py
+py -3.12 track_F_compiler/src/run_compiler_benchmarks.py
+py -3.12 track_H_dbms/src/run_dbms_benchmarks.py
+py -3.12 track_I_quantum_algorithms/src/run_track_i_benchmarks.py
+py -3.12 track_J_software_engineering/src/run_track_j_benchmarks.py
 ```

@@ -5,10 +5,10 @@
 ---
 
 ## 1. Foundations of Optimization in ML
-- [ ] **ML as Optimization**: Parameters, Loss Functions, Regularization (`track_A_continuous/src/mlp_backprop.py`)
-- [ ] **Continuous vs. Discrete Landscapes**: Formulation and properties comparison (`track_A_continuous/experiments/landscapes.py`)
-- [ ] **Convex vs. Non-Convex Landscapes**: Trajectory analysis (`track_A_continuous/experiments/landscapes.py`)
-- [ ] **Local Minima, Global Minima & Saddle Points**: Small verifiable test cases (`track_A_continuous/experiments/saddle_points.py`)
+- [x] **ML as Optimization**: Parameters, Loss Functions, Regularization (`track_A_continuous/src/mlp_backpropagation.py`)
+- [x] **Continuous vs. Discrete Landscapes**: Formulation and properties comparison (`track_A_continuous/src/benchmark_functions.py`, `run_first_order_benchmarks.py`)
+- [x] **Convex vs. Non-Convex Landscapes**: Trajectory analysis (`track_A_continuous/src/benchmark_functions.py`, `run_first_order_benchmarks.py`)
+- [x] **Local Minima, Global Minima & Saddle Points**: Small verifiable test cases (`track_A_continuous/src/benchmark_functions.py`, `run_second_order_benchmarks.py`)
 - [x] **Role of Optimization in QML**: Mathematical formulation and Quantum Kernel Estimation (`track_I_quantum_algorithms/src/quantum_machine_learning.py`)
 
 ---
