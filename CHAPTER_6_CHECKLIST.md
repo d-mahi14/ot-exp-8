@@ -9,7 +9,7 @@
 - [ ] **Continuous vs. Discrete Landscapes**: Formulation and properties comparison (`track_A_continuous/experiments/landscapes.py`)
 - [ ] **Convex vs. Non-Convex Landscapes**: Trajectory analysis (`track_A_continuous/experiments/landscapes.py`)
 - [ ] **Local Minima, Global Minima & Saddle Points**: Small verifiable test cases (`track_A_continuous/experiments/saddle_points.py`)
-- [ ] **Role of Optimization in QML**: Mathematical formulation (`track_I_quantum_algorithms/src/qml_benchmark.py`)
+- [x] **Role of Optimization in QML**: Mathematical formulation and Quantum Kernel Estimation (`track_I_quantum_algorithms/src/quantum_machine_learning.py`)
 
 ---
 
@@ -92,5 +92,5 @@
 - [x] **Track F (Compiler)**: Mini-compiler with 4 passes (Const Fold, DCE, CSE, LICM) + ILP Register Allocation + Output Equivalence (`track_F_compiler/src/ir.py`, `optimizations.py`, `track_F_compiler/results/compiler_metrics.md`)
 - [x] **Track G (xv6 OS)**: Stride Scheduler + Bcache Profiling + Stats Syscalls (`setpriority`, `getpinfo`, `getbcachestats`) + 3 Workloads in QEMU (`forktest`, `schedtest`, `bcachetest`) + `xv6_stride_and_bcache.patch` (`track_G_xv6/`)
 - [x] **Track H (DBMS)**: Knapsack/ILP Index Selection + Join-Order DP + TPC-H benchmark + EXPLAIN comparison (`track_H_dbms/src/`, `track_H_dbms/results/dbms_metrics.md`)
-- [ ] **Track I (Quantum Algorithms)**: DJ, BV, Grover, QFT, QPE, Shor (15), Annealing + 2 handcrafted circuits + VQC vs Classical SVM + Grover scaling analysis
+- [x] **Track I (Quantum Algorithms & QML)**: DJ, BV, QFT, QPE, Shor (15=3x5), Grover Search with scaling vs Classical baseline + NISQ hardware noise modeling + QSVM vs Classical RBF/Linear SVM (`track_I_quantum_algorithms/src/`, `track_I_quantum_algorithms/results/track_i_metrics.md`, `track_i_benchmarks.png`)
 - [ ] **Track J (Software Engineering)**: Test Suite Minimization on 1,000+ LOC codebase via 0-1 ILP and Greedy vs Naive

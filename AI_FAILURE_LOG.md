@@ -132,9 +132,42 @@
 
 ---
 
+### Failure Record 06: Over-Rotation in Grover's Search for N=4 Due to Asymptotic Formula Approximation
+- **Track**: Track I (Quantum Algorithms & Quantum Machine Learning)
+- **Date**: 2026-10-22
+- **AI Tool & Model**: Antigravity (Gemini 3.8 Flash)
+- **Prompt Reference**: [`prompts/track_I/prompt_01_quantum_algorithms.md`](file:///c:/dev/ot-8/prompts/track_I/prompt_01_quantum_algorithms.md)
+- **The AI Mistake**:
+  In `build_grover_circuit`, the optimal iteration count was initially calculated using the asymptotic heuristic formula:
+  ```python
+  iterations = max(1, int(round((math.pi / 4.0) * math.sqrt(N))))
+  ```
+  For $N = 4$ ($n = 2$ qubits), $\sqrt{4} = 2$, yielding $\frac{\pi}{4} \times 2 = \frac{\pi}{2} \approx 1.571$. Rounding $1.571$ evaluated to **2 iterations**.
+  Because each Grover iteration rotates the statevector in the 2D subspace by $2\theta = 2\arcsin(1/\sqrt{4}) = 2(\pi/6) = \pi/3$, after 1 iteration the state angle is exactly $\pi/6 + \pi/3 = \pi/2$ (100% target state probability). Applying a 2nd iteration rotated the state to $5\pi/6$ ($150^\circ$), causing severe over-rotation where target success probability collapsed to $\sin^2(5\pi/6) = 0.25$ (measured $0.238$ in simulation), no better than random guessing.
+- **Why It Failed / Root Cause**:
+  The asymptotic formula $R \approx \frac{\pi}{4}\sqrt{N}$ assumes small angles $\arcsin(1/\sqrt{N}) \approx 1/\sqrt{N}$, which holds accurately only as $N \to \infty$. For small search spaces ($N=4$), $\theta = 30^\circ$ is large, and the exact rotation condition $(2R + 1)\theta \approx \pi/2$ requires subtracting $0.5$:
+  $R = \text{round}\left( \frac{\pi}{4\arcsin(1/\sqrt{N})} - 0.5 \right) = \text{round}(1.5 - 0.5) = 1$.
+- **Verification Method (How It Was Caught)**:
+  Executing `evaluate_grover_noise_impact([2, 3])` on the ideal simulator output a success probability of only $0.2387$ ($23.9\%$) on 2 qubits, immediately flagging the over-rotation anomaly.
+- **The Fix**:
+  Implemented `optimal_grover_iterations(n: int)` using the exact closed-form trigonometric formula:
+  ```python
+  def optimal_grover_iterations(n: int) -> int:
+      N = 2 ** n
+      theta = math.asin(1.0 / math.sqrt(N))
+      return max(1, int(round((math.pi / (4.0 * theta)) - 0.5)))
+  ```
+  This immediately yielded $R = 1$ for $n=2$, restoring exact $100.0\%$ target state success on the ideal simulator.
+- **Viva Lesson Learned**:
+  Asymptotic approximations in quantum algorithm theory ($O(\sqrt{N})$, $O(n^2)$) often hide constant phase offsets and small-angle linearization assumptions. When implementing quantum algorithms on small NISQ or simulator instances ($n \in [2..6]$), always evaluate exact non-linear trigonometric boundaries to avoid destructive over-rotation.
+
+---
+
 ### Log Status
 - [x] **Failure 1**: Documented above (Track A: Script import resolution & dependency assumption).
 - [x] **Failure 2**: Documented above (Track A: Discrepancy between empirical metrics and textual analysis).
 - [x] **Failure 3**: Documented above (Track A: Inverted eigenvector indexing in Low-Rank Curvature).
 - [x] **Failure 4**: Documented above (Track C: Observable eigenstate zero-variance in finite-shot scaling).
 - [x] **Failure 5**: Documented above (Track D: Python GIL and Windows Process Spawn Inversion in Parallel Scaling).
+- [x] **Failure 6**: Documented above (Track I: Over-Rotation in Grover's Search for N=4 Due to Asymptotic Formula Approximation).
+
